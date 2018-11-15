@@ -85,13 +85,13 @@ class ProteinDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         if not self.phase in ['test']:
             img_id,labels=self.image_labels[index]
-            target=torch.zeros((NLABEL))
+            target=torch.zeros((NLABEL),device="cpu")
             for label in labels:
                 target[label]=1
         else:
             img_id=self.image_labels[index]
             target = None
-        im_tensor=torch.zeros((len(self.colors),512,512))
+        im_tensor=torch.zeros((len(self.colors),512,512),device="cpu")
         for j,color in enumerate(self.colors):
             image_dir=os.path.join(self.img_dir,img_id+'_'+color+'.png')
             image=imageio.imread(image_dir)
@@ -215,6 +215,7 @@ scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.2)
 t00 = time.time()
 state_dir=os.path.join(root,'state.bth')
 best_F1=0.0
+
 for epoch in range(epochs):
     print('Epoch {}/{}'.format(epoch+1, epochs))
     print('-' * 5)
