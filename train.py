@@ -103,7 +103,7 @@ class ProteinDataset(torch.utils.data.Dataset):
         return (im_tensor,target)
         
     def __len__(self):
-        return len(self.images)
+        return len(self.image_labels)
 
  
 '''
@@ -256,7 +256,8 @@ for epoch in range(epochs):
                         num, average_loss, average_F1, t02-t01))
         if phase == 'val' and average_F1 > best_F1:
             best_F1 = average_F1
-            best_model_wts = copy.deepcopy(model.state_dict())
+            #best_model_wts = copy.deepcopy(model.state_dict())
+            torch.save(model.state_dict(),os.path.join(root,'out_'+str(epoch)+'.pth'))
     print()
         
         
