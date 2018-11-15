@@ -247,11 +247,16 @@ for epoch in range(epochs):
             corrects= torch.sum(propose*targets,1).double()
             selected= torch.sum(propose,1).double()
             relevant= torch.sum(targets,1).double()
-            if corrects==0:
-                F1=0
-            else:
+            if torch.sum(corrects==0)==0:
                 F1=2/(selected/corrects+relevant/corrects)
-            running_F1 +=torch.sum(F1).item()
+                running_F1 +=torch.sum(F1).item()
+            else:
+                corrects=corrects.numpy()
+                s=selected.numpy()
+                r=relevant.numpy()
+                for i,c in enumerate(corrects):
+                    if c>0:
+                        running_F1 += 2/(s[i]/c+r[i]/c)
             
             average_loss = running_loss/num
             average_F1 = running_F1/num
