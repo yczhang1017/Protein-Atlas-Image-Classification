@@ -232,7 +232,7 @@ for epoch in range(epochs):
         for inputs,targets in dataloader[phase]:
             t01 = time.time()
             inputs = inputs.to(device)                
-            targets= targets.to(device)   
+            targets= targets.to(device).byte()   
             optimizer.zero_grad()
             with torch.set_grad_enabled(phase == 'train'):
                 outputs = model(inputs)
