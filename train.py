@@ -84,12 +84,12 @@ class ProteinDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         if not self.phase in ['test']:
-            img_id,labels=self.images[index]
+            img_id,labels=self.image_labels[index]
             target=torch.zeros((NLABEL))
             for label in labels:
                 target[label]=1
         else:
-            img_id=self.images[index]
+            img_id=self.image_labels[index]
             target = None
         im_tensor=torch.zeros((len(self.colors),512,512))
         for j,color in enumerate(self.colors):
