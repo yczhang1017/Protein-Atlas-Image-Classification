@@ -1,5 +1,4 @@
 
-import sys
 import os
 import numpy as np
 import pandas as pd
@@ -8,53 +7,64 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import torchvision
-from torchvision.transforms import transforms
+#import torchvision
+#from torchvision.transforms import transforms
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
-import numpy as np
 import time
-import copy
+import argparse
 
-root='./'
-model='vgg16'
-batch_size=16
-workers=4
-img_size = (256,256)
-lr=0.002
-epochs=100
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
+parser = argparse.ArgumentParser(
+    description='Protain Alta Image Classification')
+parser.add_argument('--root', default='./',
+                    type=str, help='directory of the data')
+parser.add_argument('--batch_size', default=24, type=int,
+                    help='Batch size for training')
+parser.add_argument('--workers', default=4, type=int,
+                    help='Number of workers used in dataloading')
+parser.add_argument('--cuda', default=True, type=str2bool,
+                    help='Use CUDA to train model')
+parser.add_argument('--lr', '--learning-rate', default=2e-3, type=float,
+                    help='initial learning rate')
+parser.add_argument('--epochs', default=100, type=int,
+                    help='number of epochs to train')
+args = parser.parse_args()
 
 NAME = {
-0:  "Nucleoplasm", 
-1:  "Nuclear membrane",   
-2:  "Nucleoli",   
-3:  "Nucleoli fibrillar center" ,  
-4:  "Nuclear speckles"   ,
-5:  "Nuclear bodies"   ,
-6:  "Endoplasmic reticulum",   
-7:  "Golgi apparatus"   ,
-8:  "Peroxisomes"   ,
-9:  "Endosomes"   ,
-10:  "Lysosomes"   ,
-11:  "Intermediate filaments",   
-12:  "Actin filaments"   ,
-13:  "Focal adhesion sites",   
-14:  "Microtubules"   ,
-15:  "Microtubule ends",   
-16:  "Cytokinetic bridge",   
-17:  "Mitotic spindle"   ,
-18:  "Microtubule organizing center" ,  
-19:  "Centrosome"   ,
-20:  "Lipid droplets",   
-21:  "Plasma membrane",   
-22:  "Cell junctions"  , 
-23:  "Mitochondria"   ,
-24:  "Aggresome"   ,
-25:  "Cytosol",
-26:  "Cytoplasmic bodies",   
-27:  "Rods & rings" 
-}
+    0:  "Nucleoplasm", 
+    1:  "Nuclear membrane",   
+    2:  "Nucleoli",   
+    3:  "Nucleoli fibrillar center" ,  
+    4:  "Nuclear speckles"   ,
+    5:  "Nuclear bodies"   ,
+    6:  "Endoplasmic reticulum",   
+    7:  "Golgi apparatus"   ,
+    8:  "Peroxisomes"   ,
+    9:  "Endosomes"   ,
+    10:  "Lysosomes"   ,
+    11:  "Intermediate filaments",   
+    12:  "Actin filaments"   ,
+    13:  "Focal adhesion sites",   
+    14:  "Microtubules"   ,
+    15:  "Microtubule ends",   
+    16:  "Cytokinetic bridge",   
+    17:  "Mitotic spindle"   ,
+    18:  "Microtubule organizing center" ,  
+    19:  "Centrosome"   ,
+    20:  "Lipid droplets",   
+    21:  "Plasma membrane",   
+    22:  "Cell junctions"  , 
+    23:  "Mitochondria"   ,
+    24:  "Aggresome"   ,
+    25:  "Cytosol",
+    26:  "Cytoplasmic bodies",   
+    27:  "Rods & rings" 
+    }
 NLABEL=len(NAME)
+
 if torch.cuda.is_available():
     torch.set_default_tensor_type(torch.cuda.FloatTensor)
     device = torch.device("cuda:0")
@@ -167,158 +177,109 @@ class VGG(nn.Module):
                 
                 
 
-
-csv_file=os.path.join(root,'train.csv')
-label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
-for key,label in label_dict.items():
-    label_dict[key]=[int(a) for a in label.split(' ')]
-    
-img_dict=[]
-ntarget=0
-mla=0;
-ids={i:[] for i in range(NLABEL)}
-for key,label in label_dict.items():
-    if mla<len(label):
-        mla=len(label)
-        mlabel=label
-    for j in label:
-        img_dict.append(j)
-        ntarget+=1
-        ids[j].append(key)
-
-image_labels={'train':[], 'val':[]}
-for l,ims in ids.items():
-    ll=len(ims)
-    vl=int(np.ceil(ll*0.1))
-    larray=list(range(ll))
-    varray=np.random.choice(ll, vl, replace=False)
-    tarray=list(set(larray) - set(varray))
-    for i in varray:
-        im=ims[int(i)]
-        image_labels['val'].append((im,label_dict[im]))
-    for i in tarray:
-        im=ims[int(i)]
-        image_labels['train'].append((im,label_dict[im]))
-
-
-
-dataset={x: ProteinDataset(root,x,image_labels[x]) 
-        for x in ['train', 'val']}
-dataloader={x: torch.utils.data.DataLoader(dataset[x],
-        batch_size=batch_size,shuffle=True,num_workers=workers,pin_memory=True)
-        for x in ['train', 'val']}
-dataset_sizes={x: len(dataset[x]) 
-        for x in ['train', 'val']}
-model = VGG(make_layers(cfg['A'], batch_norm=True))
-if torch.cuda.is_available():
-    model=nn.DataParallel(model)
-    cudnn.benchmark = True
-    model = model.cuda()
-
-criterion = nn.BCELoss()
-optimizer = optim.SGD(model.parameters(),lr=lr, momentum=0.9, weight_decay=2e-4)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.4)
-t00 = time.time()
-state_dir=os.path.join(root,'state.bth')
-best_F1=0.0
-
-for epoch in range(epochs):
-    print('Epoch {}/{}'.format(epoch+1, epochs))
-    print('-' * 5)
-    for phase in ['train','val']:
-        if phase == 'train':
-            scheduler.step()
-            model.train()
-        else:
-            model.eval()
+def main():
+    csv_file=os.path.join(args.root,'train.csv')
+    label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
+    for key,label in label_dict.items():
+        label_dict[key]=[int(a) for a in label.split(' ')]
         
-        running_loss=0
-        running_F1=0
-        num=0 
-        for inputs,targets in dataloader[phase]:
-            t01 = time.time()
-            if torch.cuda.is_available():
-                inputs = Variable(inputs.cuda())                
-                targets= Variable(targets.cuda(),requires_grad=(phase == 'train'))
-            else:
-                inputs = Variable(inputs)                
-                targets= Variable(targets,requires_grad=(phase == 'train'))
-            
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
+
+    ids={i:[] for i in range(NLABEL)}
+    for key,label in label_dict.items():
+        for j in label:
+            ids[j].append(key)
+    
+    image_labels={'train':[], 'val':[]}
+    for l,ims in ids.items():
+        ll=len(ims)
+        vl=int(np.ceil(ll*0.1))
+        larray=list(range(ll))
+        varray=np.random.choice(ll, vl, replace=False)
+        tarray=list(set(larray) - set(varray))
+        for i in varray:
+            im=ims[int(i)]
+            image_labels['val'].append((im,label_dict[im]))
+        for i in tarray:
+            im=ims[int(i)]
+            image_labels['train'].append((im,label_dict[im]))
+    
+    
+    
+    dataset={x: ProteinDataset(args.root,x,image_labels[x]) 
+            for x in ['train', 'val']}
+    dataloader={x: torch.utils.data.DataLoader(dataset[x],
+            batch_size=args.batch_size,shuffle=True,num_workers=args.workers,pin_memory=True)
+            for x in ['train', 'val']}
+    #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
+    model = VGG(make_layers(cfg['A'], batch_norm=True))
+    if torch.cuda.is_available():
+        model=nn.DataParallel(model)
+        cudnn.benchmark = True
+        model = model.cuda()
+    
+    criterion = nn.BCELoss()
+    optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=2e-4)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=8, gamma=0.4)
+    t00 = time.time()
+    state_dir=os.path.join(args.root,'state.bth')
+    best_F1=0.0
+    
+    for epoch in range(epochs):
+        print('Epoch {}/{}'.format(epoch+1, args.epochs))
+        print('-' * 5)
+        for phase in ['train','val']:
             if phase == 'train':
-                loss.backward()
-                optimizer.step()
-            num += inputs.size(0)
-            running_loss += loss.item() * inputs.size(0)
-            propose=(outputs>0.5)
-            targets=targets.byte()
-            corrects= torch.sum(propose*targets,1).double()
-            selected= torch.sum(propose,1).double()
-            relevant= torch.sum(targets,1).double()
-            if torch.sum(corrects==0)==0:
-                F1=2/(selected/corrects+relevant/corrects)
-                running_F1 +=torch.sum(F1).item()
+                scheduler.step()
+                model.train()
             else:
-                corrects=corrects.cpu().numpy()
-                s=selected.cpu().numpy()
-                r=relevant.cpu().numpy()
-                for i,c in enumerate(corrects):
-                    if c>0:
-                        running_F1 += 2/(s[i]/c+r[i]/c)
+                model.eval()
             
-            average_loss = running_loss/num
-            average_F1 = running_F1/num
-            t02 = time.time()
-            if num % (100*inputs.size(0))==0:
-                print('{} Loss: {:.4f} Acc: {:.4f} Time: {:.4f}s'.format(
-                        num, average_loss, average_F1, t02-t01))
-        if phase == 'val' and average_F1 > best_F1:
-            best_F1 = average_F1
-            #best_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(model.state_dict(),os.path.join(root,'save','out_'+str(epoch)+'.pth'))
-    print()
+            running_loss=0
+            running_F1=0
+            num=0 
+            for inputs,targets in dataloader[phase]:
+                t01 = time.time()
+                inputs = inputs.to(device)                
+                targets= targets.to(device)
+                
+                optimizer.zero_grad()
+                with torch.set_grad_enabled(phase == 'train'):
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
+                    if phase == 'train':
+                        loss.backward()
+                        optimizer.step()
+                num += inputs.size(0)
+                running_loss += loss.item() * inputs.size(0)
+                propose=(outputs>0.5)
+                targets=targets.byte()
+                corrects= torch.sum(propose*targets,1).double()
+                selected= torch.sum(propose,1).double()
+                relevant= torch.sum(targets,1).double()
+                if torch.sum(corrects==0)==0:
+                    F1=2/(selected/corrects+relevant/corrects)
+                    running_F1 +=torch.sum(F1).item()
+                else:
+                    corrects=corrects.cpu().numpy()
+                    s=selected.cpu().numpy()
+                    r=relevant.cpu().numpy()
+                    for i,c in enumerate(corrects):
+                        if c>0:
+                            running_F1 += 2/(s[i]/c+r[i]/c)
+                
+                average_loss = running_loss/num
+                average_F1 = running_F1/num
+                t02 = time.time()
+                if num % (100*inputs.size(0))==0:
+                    print('{} Loss: {:.4f} Acc: {:.4f} Time: {:.4f}s'.format(
+                            num, average_loss, average_F1, t02-t01))
+            if phase == 'val' and average_F1 > best_F1:
+                best_F1 = average_F1
+                #best_model_wts = copy.deepcopy(model.state_dict())
+                torch.save(model.state_dict(),os.path.join(args.root,'save','out_'+str(epoch)+'.pth'))
+        print()
         
-        
-
-'''        
-from collections import Counter
-c_val =Counter(all_labels)
-import matplotlib.pyplot as plt
-fig, ax1 = plt.subplots(1,1, figsize = (10, 5))
-ax1.bar(range(NLABEL), [c_val[k] for k in range(NLABEL)])
-
-for k in range(NLABEL):
-    print(NAME[k], 'count:', c_val[k])
-    
-    
-print(ntarget,mla)'''
-#
-
-    
-'''
-csv_file=os.path.join(dataset,'train.csv')
-image_df=pd.read_csv(csv_file)
-image_df['target_list'] = image_df['Target'].map(lambda x: [int(a) for a in x.split(' ')])
-#image_df=pd.read_csv(csv_file, header=None, index_col=0, squeeze=True)
-image_df['target_list'] = image_df['Target'].map(lambda x: [int(a) for a in x.split(' ')])
-'''
-'''    
-PD=ProteinDataset(dataset)
-a=PD[2][1]
-from matplotlib import pyplot as plt
-plt.imshow(np.array(a[:,:,:3]))
-'''
-
-
-
-
-'''
-if model=='vgg16':
-    net=torchvision.models.vgg16()
-    net.features[0]= nn.Conv2d(4, 64, kernel_size=3, stride=1, padding=(1, 1))    
-    net.classifier=nn.Sequential()
-''' 
+if __name__ == '__main__':
+    main()        
 
 
