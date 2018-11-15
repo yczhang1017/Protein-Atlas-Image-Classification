@@ -22,7 +22,7 @@ batch_size=16
 workers=4
 img_size = (256,256)
 lr=0.002
-epochs=50
+epochs=100
 
 NAME = {
 0:  "Nucleoplasm", 
