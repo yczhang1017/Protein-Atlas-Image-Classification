@@ -239,11 +239,10 @@ def main():
             num=0 
             for inputs,targets in dataloader[phase]:
                 t01 = time.time()
-                #inputs = inputs.to(device)                
-                #targets= targets.to(device)
                 if torch.cuda.is_available():
-                    inputs = Variable(inputs.cuda())
-                    targets =Variable(targets.cuda(),requires_grad=(phase=='train'))
+                    inputs=inputs.cuda(device)
+                    targets= targets.cuda(device)
+                    
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
