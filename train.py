@@ -251,9 +251,9 @@ for epoch in range(epochs):
                 F1=2/(selected/corrects+relevant/corrects)
                 running_F1 +=torch.sum(F1).item()
             else:
-                corrects=corrects.numpy()
-                s=selected.numpy()
-                r=relevant.numpy()
+                corrects=corrects.cpu().numpy()
+                s=selected.cpu().numpy()
+                r=relevant.cpu().numpy()
                 for i,c in enumerate(corrects):
                     if c>0:
                         running_F1 += 2/(s[i]/c+r[i]/c)
