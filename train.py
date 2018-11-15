@@ -31,8 +31,15 @@ parser.add_argument('--lr', '--learning-rate', default=2e-3, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=100, type=int,
                     help='number of epochs to train')
+parser.add_argument('--save_folder', default='save/', type=str,
+                    help='Dir to save results')
+
 args = parser.parse_args()
 
+
+if not os.path.exists(args.save_folder):
+    os.mkdir(args.save_folder)
+    
 NAME = {
     0:  "Nucleoplasm", 
     1:  "Nuclear membrane",   
@@ -275,7 +282,7 @@ def main():
             if phase == 'val' and average_F1 > best_F1:
                 best_F1 = average_F1
                 #best_model_wts = copy.deepcopy(model.state_dict())
-                torch.save(model.state_dict(),os.path.join(args.root,'save','out_'+str(epoch)+'.pth'))
+                torch.save(model.state_dict(),os.path.join(args.root,args.save_folder,'out_'+str(epoch)+'.pth'))
         print()
         
 if __name__ == '__main__':
