@@ -96,8 +96,7 @@ class ProteinDataset(torch.utils.data.Dataset):
             image_dir=os.path.join(self.img_dir,img_id+'_'+color+'.png')
             image=imageio.imread(image_dir)
             im_tensor[j,:,:]=torch.tensor(image,dtype=torch.float,device="cpu")/256
-            
-        im_tensor=F.adaptive_avg_pool2d(im_tensor, self.size).permute(1,2,0)    
+        im_tensor=F.adaptive_avg_pool2d(im_tensor, self.size)    
         if self.transform is not None:
             im_tensor = self.transform(im_tensor)
         return (im_tensor,target)
