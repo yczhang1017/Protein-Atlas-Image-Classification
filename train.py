@@ -18,7 +18,7 @@ import copy
 
 root='./'
 model='vgg16'
-batch_size=32
+batch_size=16
 workers=4
 img_size = (256,256)
 lr=0.001
@@ -247,7 +247,10 @@ for epoch in range(epochs):
             corrects= torch.sum(propose*targets,1).double()
             selected= torch.sum(propose,1).double()
             relevant= torch.sum(targets,1).double()
-            F1=2/(selected/corrects+relevant/corrects)
+            if corrects==0:
+                F1=0
+            else:
+                F1=2/(selected/corrects+relevant/corrects)
             running_F1 +=torch.sum(F1).item()
             
             average_loss = running_loss/num
