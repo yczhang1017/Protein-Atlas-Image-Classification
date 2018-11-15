@@ -271,7 +271,7 @@ for epoch in range(epochs):
         if phase == 'val' and average_F1 > best_F1:
             best_F1 = average_F1
             #best_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(model.state_dict(),os.path.join(root,'out_'+str(epoch)+'.pth'))
+            torch.save(model.state_dict(),os.path.join(root,'save','out_'+str(epoch)+'.pth'))
     print()
         
         
