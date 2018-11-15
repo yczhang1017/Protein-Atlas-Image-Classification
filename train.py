@@ -21,7 +21,7 @@ model='vgg16'
 batch_size=16
 workers=4
 img_size = (256,256)
-lr=0.003
+lr=0.002
 epochs=50
 
 NAME = {
@@ -110,7 +110,7 @@ class ProteinDataset(torch.utils.data.Dataset):
 custom-built vgg model
 '''
 cfg = {
-    'A': [64,64,'M',128,128,'M',256,'M',256,'M',256,'M']
+    'A': [64,'M',128,'M',256,'M',384,'M',384,'M']
     }
 def make_layers(cfg, batch_norm=True):
     layers =[nn.Conv2d(4, 32,kernel_size=7,stride=2,padding=3,bias=False),
@@ -136,7 +136,7 @@ class VGG(nn.Module):
         self.features = features
                 
         self.classifier = nn.Sequential(
-            nn.Linear(256 * 8 * 8, 2048),
+            nn.Linear(384 * 8 * 8, 2048),
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(2048, 2048),
@@ -215,7 +215,7 @@ if torch.cuda.is_available():
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(model.parameters(),lr=lr, momentum=0.9, weight_decay=2e-4)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.4)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.4)
 t00 = time.time()
 state_dir=os.path.join(root,'state.bth')
 best_F1=0.0
