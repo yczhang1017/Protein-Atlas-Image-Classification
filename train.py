@@ -139,6 +139,7 @@ class VGG(nn.Module):
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(2048, num_classes),
+            nn.Sigmoid(),
         )
         if init_weights:
             self._initialize_weights()
