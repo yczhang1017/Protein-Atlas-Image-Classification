@@ -239,18 +239,17 @@ for epoch in range(epochs):
             t01 = time.time()
             if torch.cuda.is_available():
                 inputs = Variable(inputs.cuda())                
-                targets= Variable(targets.cuda())
+                targets= Variable(targets.cuda(),requires_grad=(phase == 'train'))
             else:
                 inputs = Variable(inputs)                
-                targets= Variable(targets)
+                targets= Variable(targets,requires_grad=(phase == 'train'))
             
             optimizer.zero_grad()
-            with targets.requires_grad_(phase == 'train'):
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
-                if phase == 'train':
-                    loss.backward()
-                    optimizer.step()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            if phase == 'train':
+                loss.backward()
+                optimizer.step()
             num += inputs.size(0)
             running_loss += loss.item() * inputs.size(0)
             propose=(outputs>0.5)
