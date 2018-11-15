@@ -211,6 +211,7 @@ dataset_sizes={x: len(dataset[x])
         for x in ['train', 'val']}
 model = VGG(make_layers(cfg['A'], batch_norm=True))
 if torch.cuda.is_available():
+    model=nn.DataParallel(model)
     model = model.cuda()
 
 criterion = nn.BCELoss()
