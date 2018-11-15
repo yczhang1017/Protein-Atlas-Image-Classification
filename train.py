@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-#import torchvision
+import torchvision
 #from torchvision.transforms import transforms
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
@@ -219,12 +219,12 @@ def main():
     
     criterion = nn.BCELoss()
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=2e-4)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=8, gamma=0.4)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.4)
     t00 = time.time()
     state_dir=os.path.join(args.root,'state.bth')
     best_F1=0.0
     
-    for epoch in range(epochs):
+    for epoch in range(args.epochs):
         print('Epoch {}/{}'.format(epoch+1, args.epochs))
         print('-' * 5)
         for phase in ['train','val']:
@@ -239,9 +239,11 @@ def main():
             num=0 
             for inputs,targets in dataloader[phase]:
                 t01 = time.time()
-                inputs = inputs.to(device)                
-                targets= targets.to(device)
-                
+                #inputs = inputs.to(device)                
+                #targets= targets.to(device)
+                if torch.cuda.is_available():
+                    inputs = Variable(inputs.cuda())
+                    targets =Variable(targets.cuda(),requires_grad=(phase=='train'))
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
