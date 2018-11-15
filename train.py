@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import torchvision
 from torchvision.transforms import transforms
 from torch.autograd import Variable
-
+import torch.backends.cudnn as cudnn
 import numpy as np
 import time
 import copy
@@ -212,6 +212,7 @@ dataset_sizes={x: len(dataset[x])
 model = VGG(make_layers(cfg['A'], batch_norm=True))
 if torch.cuda.is_available():
     model=nn.DataParallel(model)
+    cudnn.benchmark = True
     model = model.cuda()
 
 criterion = nn.BCELoss()
@@ -236,10 +237,15 @@ for epoch in range(epochs):
         num=0 
         for inputs,targets in dataloader[phase]:
             t01 = time.time()
-            inputs = inputs.to(device)                
-            targets= targets.to(device)   
+            if torch.cuda.is_available():
+                inputs = Variable(inputs.cuda())                
+                targets= Variable(targets.cuda())
+            else:
+                inputs = Variable(inputs)                
+                targets= Variable(targets)
+            
             optimizer.zero_grad()
-            with torch.set_grad_enabled(phase == 'train'):
+            with targets.requires_grad_(phase == 'train'):
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
                 if phase == 'train':
