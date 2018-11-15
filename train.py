@@ -29,7 +29,7 @@ parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
 parser.add_argument('--lr', '--learning-rate', default=1e-2, type=float,
                     help='initial learning rate')
-parser.add_argument('--epochs', default=100, type=int,
+parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
 parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
@@ -228,7 +228,7 @@ def main():
     
     criterion = nn.BCELoss()
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=12, gamma=0.1)
     t00 = time.time()
     best_F1=0.0
     
