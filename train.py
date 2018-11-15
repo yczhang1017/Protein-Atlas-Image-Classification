@@ -27,13 +27,14 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=2e-3, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-2, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=100, type=int,
                     help='number of epochs to train')
 parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
-
+parser.add_argument('--weight_decay', default=5e-4, type=float,
+                    help='Weight decay')
 args = parser.parse_args()
 
 
@@ -127,7 +128,8 @@ class ProteinDataset(torch.utils.data.Dataset):
 custom-built vgg model
 '''
 cfg = {
-    'A': [64,'M',128,'M',256,'M',384,'M',384,'M']
+    'A': [64,'M',128,'M',256,'M',384,'M',384,'M'],
+    'B': [64,'M',128,128,'M',256,256,'M',384,384,'M',384,384,'M']
     }
 def make_layers(cfg, batch_norm=True):
     layers =[nn.Conv2d(4, 32,kernel_size=7,stride=2,padding=3,bias=False),
@@ -225,8 +227,8 @@ def main():
         model = model.cuda()
     
     criterion = nn.BCELoss()
-    optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=2e-4)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.4)
+    optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
     t00 = time.time()
     best_F1=0.0
     
