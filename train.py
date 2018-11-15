@@ -18,7 +18,7 @@ import copy
 
 root='./'
 model='vgg16'
-batch_size=16
+batch_size=32
 workers=4
 img_size = (256,256)
 lr=0.003
@@ -63,7 +63,7 @@ else:
     device = torch.device("cpu")
 
 class ProteinDataset(torch.utils.data.Dataset):
-    def __init__(self,root,phase,image_labels, size=(256,256) ,transform=None):
+    def __init__(self,root,phase,image_labels, size=None ,transform=None):
         self.root=os.path.expanduser(root)
         self.phase=phase
         self.transform = transform
@@ -96,7 +96,8 @@ class ProteinDataset(torch.utils.data.Dataset):
             image_dir=os.path.join(self.img_dir,img_id+'_'+color+'.png')
             image=imageio.imread(image_dir)
             im_tensor[j,:,:]=torch.tensor(image,dtype=torch.float,device="cpu")/256
-        im_tensor=F.adaptive_avg_pool2d(im_tensor, self.size)    
+        if self.size is not None:
+            im_tensor=F.adaptive_avg_pool2d(im_tensor, self.size)    
         if self.transform is not None:
             im_tensor = self.transform(im_tensor)
         return (im_tensor,target)
@@ -109,11 +110,13 @@ class ProteinDataset(torch.utils.data.Dataset):
 custom-built vgg model
 '''
 cfg = {
-    'A': [64,'M',128,'M',256,'M',512,'M',512,'M']
+    'A': [64,64,'M',128,128,'M',256,'M',256,'M',256,'M']
     }
 def make_layers(cfg, batch_norm=True):
-    layers = []
-    in_channels = 4
+    layers =[nn.Conv2d(4, 32,kernel_size=7,stride=2,padding=3,bias=False),
+             nn.BatchNorm2d(32),
+             nn.ReLU(inplace=True)]
+    in_channels = 32
     for v in cfg:
         if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
@@ -131,8 +134,9 @@ class VGG(nn.Module):
     def __init__(self, features, num_classes=NLABEL, init_weights=True):
         super(VGG, self).__init__()
         self.features = features
+                
         self.classifier = nn.Sequential(
-            nn.Linear(512 * 8 * 8, 2048),
+            nn.Linear(256 * 8 * 8, 2048),
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(2048, 2048),
@@ -211,7 +215,7 @@ if torch.cuda.is_available():
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(model.parameters(),lr=lr, momentum=0.9, weight_decay=2e-4)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.4)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.4)
 t00 = time.time()
 state_dir=os.path.join(root,'state.bth')
 best_F1=0.0
