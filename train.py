@@ -198,7 +198,7 @@ for l,ims in ids.items():
 
 
 
-dataset={x: ProteinDataset(root,x,image_labels) 
+dataset={x: ProteinDataset(root,x,image_labels[x]) 
         for x in ['train', 'val']}
 dataloader={x: torch.utils.data.DataLoader(dataset[x],
         batch_size=batch_size,shuffle=True,num_workers=workers)
