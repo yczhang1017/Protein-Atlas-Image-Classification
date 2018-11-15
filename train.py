@@ -232,7 +232,7 @@ for epoch in range(epochs):
         for inputs,targets in dataloader[phase]:
             t01 = time.time()
             inputs = inputs.to(device)                
-            targets= targets.to(device).byte()   
+            targets= targets.to(device)   
             optimizer.zero_grad()
             with torch.set_grad_enabled(phase == 'train'):
                 outputs = model(inputs)
@@ -242,7 +242,8 @@ for epoch in range(epochs):
                     optimizer.step()
             num += inputs.size(0)
             running_loss += loss.item() * inputs.size(0)
-            propose= outputs>0.5
+            propose=(outputs>0.5)
+            targets=targets.byte()
             corrects= torch.sum(propose*targets,1).double()
             selected= torch.sum(propose,1).double()
             relevant= torch.sum(targets,1).double()
