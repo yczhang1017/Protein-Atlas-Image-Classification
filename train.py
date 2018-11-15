@@ -18,7 +18,7 @@ import copy
 
 root='./'
 model='vgg16'
-batch_size=32
+batch_size=16
 workers=4
 img_size = (256,256)
 lr=0.003
