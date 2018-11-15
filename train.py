@@ -21,8 +21,8 @@ model='vgg16'
 batch_size=16
 workers=4
 img_size = (256,256)
-lr=0.001
-epochs=10
+lr=0.003
+epochs=50
 
 NAME = {
 0:  "Nucleoplasm", 
@@ -211,7 +211,7 @@ if torch.cuda.is_available():
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(model.parameters(),lr=lr, momentum=0.9, weight_decay=2e-4)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.2)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.4)
 t00 = time.time()
 state_dir=os.path.join(root,'state.bth')
 best_F1=0.0
