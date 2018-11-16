@@ -35,6 +35,16 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
+parser.add_argument('--step_size', default=14, type=int,
+                    help='Number of steps for every learning rate decay')
+parser.add_argument('--checkpoint', default=None, type=str,
+                    help='Checkpoint state_dict file to resume training from')
+parser.add_argument('--resume_epoch', default=0, type=int,
+                    help='epoch number to be resumed at')
+parser.add_argument('--type', default='A',  choices=['A', 'B'], type=str,
+                    help='type of the model')
+
+
 args = parser.parse_args()
 
 
@@ -81,20 +91,21 @@ else:
     device = torch.device("cpu")
 
 class ProteinDataset(torch.utils.data.Dataset):
-    def __init__(self,root,phase,image_labels, size=None ,transform=None):
+    def __init__(self,root,phase,image_labels=None, size=None ,transform=None):
         self.root=os.path.expanduser(root)
         self.phase=phase
         self.transform = transform
         self.size=size
         
-        self.img_dir=os.path.join(root,'train_img')
+        self.img_dir=os.path.join(root,phase+'_img')
         self.colors=['red','green','blue','yellow']
         self.image_labels=image_labels
-        '''files=os.listdir(self.img_dir)
-        for img in files:
-            if img.endswith('blue.png'):
-                ims=img.split('_')
-                self.images+=[ims[0]]'''
+        if image_labels==None:
+            files=os.listdir(self.img_dir)
+            for img in files:
+                if img.endswith('blue.png'):
+                    ims=img.split('_')
+                    self.images+=[ims[0]]
         #csv_file=os.path.join(root,'train.csv')
         #self.labels=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
         #for key in self.labels.keys():
@@ -220,15 +231,21 @@ def main():
             batch_size=args.batch_size,shuffle=True,num_workers=args.workers,pin_memory=True)
             for x in ['train', 'val']}
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
-    model = VGG(make_layers(cfg['A'], batch_norm=True))
+    model = VGG(make_layers(cfg[args.type], batch_norm=True))
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
         cudnn.benchmark = True
+        
+    if args.checkpoint:
+        print('Resuming training, loading {}...'.format(args.checkpoint))
+        model.load_weights(os.path.join(args.root,args.checkpoint))
+            
+    if torch.cuda.is_available():
         model = model.cuda()
     
     criterion = nn.BCELoss()
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=12, gamma=0.1)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.1)
     t00 = time.time()
     best_F1=0.0
     
@@ -284,7 +301,7 @@ def main():
             if phase == 'val' and average_F1 > best_F1:
                 best_F1 = average_F1
                 #best_model_wts = copy.deepcopy(model.state_dict())
-                torch.save(model.state_dict(),os.path.join(args.root,args.save_folder,'out_'+str(epoch)+'.pth'))
+                torch.save(model.state_dict(),os.path.join(args.root,args.save_folder,'out_'+str(epoch+1)+'.pth'))
         print()
         
 if __name__ == '__main__':
