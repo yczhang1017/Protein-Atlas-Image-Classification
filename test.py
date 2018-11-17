@@ -1,6 +1,6 @@
 from train import ProteinDataset,VGG,make_layers,cfg,NAME,NLABEL
 import os
-#import numpy as np
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -68,14 +68,16 @@ def main():
     for inputs in dataloader:
         inputs = inputs.to(device)
         outputs = model(inputs)
-        propose=(outputs>0.5).cpu().numpy()
-        count=propose.shape[0]
+        score=outputs.cpu().numpy()
+        count=score.shape[0]
         image_id=images[num]
         num+=count
         for j in range(count):
-            predicts=list(propose[j,:].nonzero()[0]) 
+            propose=score[j,:]>0.5
+            predicts=list(propose.nonzero()[0]) 
             if len(predicts)==0:
-                f.write(image_id+','+'0\n')
+                predicts=np.argmax(score[j,:])
+                f.write(image_id+','+str(predicts)+'\n')
             else:
                 f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
         t01 = t02
