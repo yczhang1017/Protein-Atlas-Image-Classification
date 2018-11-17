@@ -34,12 +34,11 @@ else:
     torch.set_default_tensor_type(torch.FloatTensor)
     device = torch.device("cpu")
 def main():   
-    phase='train'
-    csv_file=os.path.join(args.root,phase+'.csv')
+    csv_file=os.path.join(args.root,'train'+'.csv')
     label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
     images= list(label_dict.keys())
     
-    dataset=ProteinDataset(args.root,phase,images) 
+    dataset=ProteinDataset(args.root,'train',images) 
     dataloader=torch.utils.data.DataLoader(dataset,
                 batch_size=args.batch_size,shuffle=False,num_workers=args.workers,pin_memory=True)
     
@@ -67,8 +66,8 @@ def main():
     f.write('Id,Predicted\n')
     t02=time.time()
     with torch.no_grad():
-        for inputs,target in dataloader:
-            inputs,target = inputs.to(device)
+        for inputs,targets in dataloader:
+            inputs = inputs.to(device)
             outputs = model(inputs)
             score=outputs.cpu().numpy()
             count=score.shape[0]
