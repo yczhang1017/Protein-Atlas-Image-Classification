@@ -74,9 +74,8 @@ def main():
             outputs = model(inputs)
             score=outputs.cpu().numpy()
             count=score.shape[0]
-            image_id=images[num]
-            num+=count
             for j in range(count):
+                image_id=images[num]
                 propose=score[j,:]>0.5
                 predicts=list(propose.nonzero()[0]) 
                 if len(predicts)==0:
@@ -84,6 +83,7 @@ def main():
                     f.write(image_id+','+str(predicts)+'\n')
                 else:
                     f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
+                num+=1
             t01 = t02
             t02= time.time()
             dt1=(t02-t01)/count
