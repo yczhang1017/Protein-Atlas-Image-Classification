@@ -36,7 +36,10 @@ else:
 def main():   
     csv_file=os.path.join(args.root,'train'+'.csv')
     label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
-    images= list(label_dict.keys())
+    images=[]
+    for key,label in label_dict.items():
+        labels=[int(a) for a in label.split(' ')]
+        images.append((key,labels))
     
     dataset=ProteinDataset(args.root,'train',images) 
     dataloader=torch.utils.data.DataLoader(dataset,
