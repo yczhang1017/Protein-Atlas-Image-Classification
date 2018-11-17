@@ -74,7 +74,7 @@ def main():
             outputs = model(inputs)
             score=outputs.cpu().numpy()
             count=score.shape[0]
-            image_id=images[num]
+            image_id=images[num][0]
             num+=count
             for j in range(count):
                 propose=score[j,:]>0.5
