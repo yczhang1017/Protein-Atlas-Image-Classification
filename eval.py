@@ -35,13 +35,15 @@ else:
     device = torch.device("cpu")
 def main():   
     csv_file=os.path.join(args.root,'train'+'.csv')
-    label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
-    images=[]
-    for key,label in label_dict.items():
-        labels=[int(a) for a in label.split(' ')]
-        images.append((key,labels))
+    label_dict=pd.read_csv(csv_file)
+    image_label=[]
+    for i in range(len(label_dict)):
+        name=label_dict.loc[i]['Id']
+        target=label_dict.loc[i]['Target']
+        labels=[int(a) for a in target.split(' ')]
+        image_label.append((name,labels))
     
-    dataset=ProteinDataset(args.root,'train',images) 
+    dataset=ProteinDataset(args.root,'train',image_label) 
     dataloader=torch.utils.data.DataLoader(dataset,
                 batch_size=args.batch_size,shuffle=False,num_workers=args.workers,pin_memory=True)
     
@@ -62,7 +64,7 @@ def main():
     
     model.eval()
     print('Finished loading model!')
-    total=len(images)
+    total=len(image_label)
     num=0
     output_file=os.path.join(args.root,args.results,'eval_'+args.type+'.csv')
     f=open( output_file , mode='w+')
@@ -74,7 +76,7 @@ def main():
             outputs = model(inputs)
             score=outputs.cpu().numpy()
             count=score.shape[0]
-            image_id=images[num][0]
+            image_id=image_label[num][0]
             num+=count
             for j in range(count):
                 propose=score[j,:]>0.5
