@@ -18,6 +18,8 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
+parser.add_argument('--checkpoint', default='A/A_38.pth', type=str,
+                    help='Trained state_dict file path to open')
 parser.add_argument('--type', default='A', choices=['A', 'B'], type=str,
                     help='type of the model')
 
