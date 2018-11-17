@@ -12,9 +12,9 @@ parser = argparse.ArgumentParser(
     description='Protain Alta Image Classification')
 parser.add_argument('--root', default='./',
                     type=str, help='directory of the data')
-parser.add_argument('--batch_size', default=16, type=int,
+parser.add_argument('--batch_size', default=32, type=int,
                     help='Batch size for training')
-parser.add_argument('--workers', default=4, type=int,
+parser.add_argument('--workers', default=8, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
@@ -64,18 +64,22 @@ def main():
     output_file=os.path.join(args.root,args.results,args.type+'.txt')
     f=open( output_file , mode='w+')
     f.write('Id,Predicted\n')
+    t01=time.time()
     for inputs in dataloader:
-        t01 = time.time()
         inputs = inputs.to(device)
         outputs = model(inputs)
         propose=(outputs>0.5).cpu().numpy()
-        for j in range(args.batch_size):
+        count=propose.shape[0]
+        for j in range(count):
             predicts=list(propose[j,:].nonzero()[0])        
             image_id=images[num]
             num+=1
-            f.write(image_id+', '+' '.join(str(label) for label in predicts)+'\n')
+            f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
+        if count==0:
+            f.write(image_id+','+'0\n')
         t02= time.time()
-        dt1=(t02-t01)/args.batch_size
+        t01 = t02
+        dt1=(t02-t01)/count
         print('Image {:d}/{:d} time: {:.4f}s'.format(num+1,total,dt1))
     f.close()
     
