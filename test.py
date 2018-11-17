@@ -64,21 +64,22 @@ def main():
     output_file=os.path.join(args.root,args.results,args.type+'.txt')
     f=open( output_file , mode='w+')
     f.write('Id,Predicted\n')
-    t01=time.time()
+    t02=time.time()
     for inputs in dataloader:
         inputs = inputs.to(device)
         outputs = model(inputs)
         propose=(outputs>0.5).cpu().numpy()
         count=propose.shape[0]
+        image_id=images[num]
+        num+=count
         for j in range(count):
-            predicts=list(propose[j,:].nonzero()[0])        
-            image_id=images[num]
-            num+=1
-            f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
-        if count==0:
-            f.write(image_id+','+'0\n')
-        t02= time.time()
+            predicts=list(propose[j,:].nonzero()[0]) 
+            if len(predicts)==0:
+                f.write(image_id+','+'0\n')
+            else:
+                f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
         t01 = t02
+        t02= time.time()
         dt1=(t02-t01)/count
         print('Image {:d}/{:d} time: {:.4f}s'.format(num+1,total,dt1))
     f.close()
