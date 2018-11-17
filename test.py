@@ -35,8 +35,11 @@ else:
     device = torch.device("cpu")
 def main():   
     csv_file=os.path.join(args.root,'sample_submission.csv')
-    label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
-    images= list(label_dict.keys())
+    label_dict=pd.read_csv(csv_file)
+    images= []
+    for i in range(len(label_dict)):
+        name=label_dict.loc[i]['Id']
+        images.append(name)
     
     dataset=ProteinDataset(args.root,'test',images) 
     dataloader=torch.utils.data.DataLoader(dataset,
