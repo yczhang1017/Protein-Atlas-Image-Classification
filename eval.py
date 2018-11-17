@@ -35,6 +35,8 @@ else:
     device = torch.device("cpu")
 def main():   
     csv_file=os.path.join(args.root,'train'+'.csv')
+    #LABEL = {v: k for k, v in NAME.items()}
+    #name_sorted = sorted(NAME.items(), key=lambda kv: kv[1])
     label_dict=pd.read_csv(csv_file)
     image_label=[]
     for i in range(len(label_dict)):
@@ -84,6 +86,7 @@ def main():
                     predicts=np.argmax(score[j,:])
                     f.write(image_id+','+str(predicts)+'\n')
                 else:
+                    predicts=sorted(predicts,key=lambda kv: NAME[kv])
                     f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
                 num+=1
             t01 = t02

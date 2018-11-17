@@ -82,12 +82,13 @@ def main():
                     predicts=np.argmax(score[j,:])
                     f.write(image_id+','+str(predicts)+'\n')
                 else:
+                    predicts=sorted(predicts,key=lambda kv: NAME[kv])
                     f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
                 num+=1
             t01 = t02
             t02= time.time()
             dt1=(t02-t01)/count
-            print('Image {:d}/{:d} time: {:.4f}s'.format(num+1,total,dt1))
+            print('Image {:d}/{:d} time: {:.4f}s'.format(num,total,dt1))
     f.close()
     
 if __name__ == '__main__':
