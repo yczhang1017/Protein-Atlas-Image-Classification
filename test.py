@@ -65,25 +65,26 @@ def main():
     f=open( output_file , mode='w+')
     f.write('Id,Predicted\n')
     t02=time.time()
-    for inputs in dataloader:
-        inputs = inputs.to(device)
-        outputs = model(inputs)
-        score=outputs.cpu().numpy()
-        count=score.shape[0]
-        image_id=images[num]
-        num+=count
-        for j in range(count):
-            propose=score[j,:]>0.5
-            predicts=list(propose.nonzero()[0]) 
-            if len(predicts)==0:
-                predicts=np.argmax(score[j,:])
-                f.write(image_id+','+str(predicts)+'\n')
-            else:
-                f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
-        t01 = t02
-        t02= time.time()
-        dt1=(t02-t01)/count
-        print('Image {:d}/{:d} time: {:.4f}s'.format(num+1,total,dt1))
+    with torch.no_grad():
+        for inputs in dataloader:
+            inputs = inputs.to(device)
+            outputs = model(inputs)
+            score=outputs.cpu().numpy()
+            count=score.shape[0]
+            image_id=images[num]
+            num+=count
+            for j in range(count):
+                propose=score[j,:]>0.5
+                predicts=list(propose.nonzero()[0]) 
+                if len(predicts)==0:
+                    predicts=np.argmax(score[j,:])
+                    f.write(image_id+','+str(predicts)+'\n')
+                else:
+                    f.write(image_id+','+' '.join(str(label) for label in predicts)+'\n')
+            t01 = t02
+            t02= time.time()
+            dt1=(t02-t01)/count
+            print('Image {:d}/{:d} time: {:.4f}s'.format(num+1,total,dt1))
     f.close()
     
 if __name__ == '__main__':
