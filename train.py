@@ -242,7 +242,10 @@ def main():
         
     if args.checkpoint:
         print('Resuming training, loading {}...'.format(args.checkpoint))
-        model.load_weights(os.path.join(args.root,args.checkpoint))
+        weight_file=os.path.join(args.root,args.checkpoint)
+        model.load_state_dict(torch.load(weight_file,
+                                 map_location=lambda storage, loc: storage))
+        
             
     if torch.cuda.is_available():
         model = model.cuda()
@@ -295,7 +298,6 @@ def main():
                     for i,c in enumerate(corrects):
                         if c>0:
                             running_F1 += 2/(s[i]/c+r[i]/c)
-                
                 average_loss = running_loss/num
                 average_F1 = running_F1/num
                 t02 = time.time()
