@@ -146,92 +146,73 @@ custom-built SqueezeNet model
 '''
 import torch.nn.init as init
 import torch.utils.model_zoo as model_zoo
-from torchvision.models.squeezenet import model_urls
+from torchvision.models.resnet import model_urls,Bottleneck,BasicBlock
 import collections
-class Fire(nn.Module):
-    def __init__(self, inplanes, squeeze_planes,
-                 expand1x1_planes, expand3x3_planes):
-        super(Fire, self).__init__()
-        self.inplanes = inplanes
-        self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
-        self.squeeze_activation = nn.ReLU(inplace=True)
-        self.expand1x1 = nn.Conv2d(squeeze_planes, expand1x1_planes,
-                                   kernel_size=1)
-        self.expand1x1_activation = nn.ReLU(inplace=True)
-        self.expand3x3 = nn.Conv2d(squeeze_planes, expand3x3_planes,
-                                   kernel_size=3, padding=1)
-        self.expand3x3_activation = nn.ReLU(inplace=True)
+def conv3x3(in_planes, out_planes, stride=1):
+    """3x3 convolution with padding"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                     padding=1, bias=False)
 
-    def forward(self, x):
-        x = self.squeeze_activation(self.squeeze(x))
-        return torch.cat([
-            self.expand1x1_activation(self.expand1x1(x)),
-            self.expand3x3_activation(self.expand3x3(x))
-        ], 1)
-class SqueezeNet(nn.Module):
-    def __init__(self, version=1.1, num_classes=NLABEL):
-        super(SqueezeNet, self).__init__()
-        if version not in [1.0, 1.1]:
-            raise ValueError("Unsupported SqueezeNet version {version}:"
-                             "1.0 or 1.1 expected".format(version=version))
-        self.num_classes = num_classes
-        if version == 1.0:
-            self.features = nn.Sequential(
-                nn.Conv2d(4, 96, kernel_size=7, stride=2),
-                nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
-                Fire(96, 16, 64, 64),
-                Fire(128, 16, 64, 64),
-                Fire(128, 32, 128, 128),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True), #added maxpool
-                Fire(256, 32, 128, 128),
-                Fire(256, 48, 192, 192),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
-                Fire(384, 48, 192, 192),
-                Fire(384, 64, 256, 256),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
-                Fire(512, 64, 256, 256),
-            )
-        else:
-            self.features = nn.Sequential(
-                nn.Conv2d(4, 64, kernel_size=3, stride=2),
-                nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
-                Fire(64, 16, 64, 64),
-                Fire(128, 16, 64, 64),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
-                Fire(128, 32, 128, 128),
-                Fire(256, 32, 128, 128),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
-                Fire(256, 48, 192, 192),
-                Fire(384, 48, 192, 192),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True), #added maxpool
-                Fire(384, 64, 256, 256),
-                Fire(512, 64, 256, 256),
-            )
-        # Final convolution is initialized differently form the rest
-        final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)
-        self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5),
-            final_conv,
-            nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Sigmoid()
-        )
+
+def conv1x1(in_planes, out_planes, stride=1):
+    """1x1 convolution"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+
+class ResNet(nn.Module):
+    def __init__(self, block, layers, num_classes=NLABEL):
+        super(ResNet, self).__init__()
+        self.inplanes = 64
+        self.conv1 = nn.Conv2d(4, 64, kernel_size=7, stride=2, padding=3,
+                               bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(block, 64, layers[0], stride=2)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                if m is final_conv:
-                    init.normal_(m.weight, mean=0.0, std=0.01)
-                else:
-                    init.kaiming_uniform_(m.weight)
-                if m.bias is not None:
-                    init.constant_(m.bias, 0)
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def _make_layer(self, block, planes, blocks, stride=1):
+        downsample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = nn.Sequential(
+                conv1x1(self.inplanes, planes * block.expansion, stride),
+                nn.BatchNorm2d(planes * block.expansion),
+            )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
+
+        return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.features(x)
-        x = self.classifier(x)
-        return x.view(x.size(0), self.num_classes)
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+
+        return x
                 
 '''
 Focal loss to handle imbalance between foreground and background
@@ -309,11 +290,14 @@ def main():
             for x in ['train', 'val']}
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
-    model =SqueezeNet(version=1.1)
+    #model =SqueezeNet(version=1.1)
+    model = ResNet(BasicBlock, [3, 4, 6, 3])
+    
+    pre_trained=model_zoo.load_url(model_urls['resnet34'])
+    con1_weight=pre_trained['conv1.weight']
+    pre_trained['conv1.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,3,3)),1)
+    pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
     '''
-    pre_trained=model_zoo.load_url(model_urls['squeezenet1_1'])
-    con1_weight=pre_trained['features.0.weight']
-    pre_trained['features.0.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,3,3)),1)
     pre_trained2=collections.OrderedDict()
     for _ in range(len(pre_trained)):
         k,v=pre_trained.popitem(last=False)
@@ -322,9 +306,9 @@ def main():
             k=k.replace("12","13")
             k=k.replace("11","12")
             pre_trained2[k]=v
-            
-    model.features.load_state_dict(pre_trained2)
-    '''
+    '''     
+    model.features.load_state_dict(pre_trained)
+    
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
         cudnn.benchmark = True
@@ -373,7 +357,7 @@ def main():
                 running_loss += loss.item() * inputs.size(0)
                 propose=(outputs>0.5)
                 targets=targets.byte()
-                corrects= torch.sum(propose*targets,1).double()
+                corrects= torch.sum(propose==targets,1).double()
                 selected= torch.sum(propose,1).double()
                 relevant= torch.sum(targets,1).double()
                 if torch.sum(corrects==0)==0:
@@ -386,6 +370,8 @@ def main():
                     for i,c in enumerate(corrects):
                         if c>0:
                             running_F1 += 2/(s[i]/c+r[i]/c)
+                if phase=='eval':
+                    import pdb; pdb.set_trace()
                 average_loss = running_loss/num
                 average_F1 = running_F1/num
                 t02 = time.time()
