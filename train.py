@@ -258,8 +258,9 @@ def main():
     #repeat training images with rare labels
     repeat=[];pos_weight=[];
     for i in range(NLABEL):
-        repeat.append(int(np.power(len(label_dict)/len(ids[i]),0.2)))
-        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),1))
+        rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
+        repeat.append(rep)
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),1)/rep)
         
     repeat=np.array(repeat)
     pos_weight=torch.tensor(pos_weight)
