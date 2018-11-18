@@ -215,7 +215,8 @@ class SqueezeNet(nn.Module):
             nn.Dropout(p=0.5),
             final_conv,
             nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d((1, 1))
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Sigmoid()
         )
 
         for m in self.modules():
@@ -307,7 +308,7 @@ def main():
     pre_trained=model_zoo.load_url(model_urls['squeezenet1_1'])
     con1_weight=pre_trained['features.0.weight']
     pre_trained['features.0.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,3,3)),1)
-    
+    model.load_state_dict(pre_trained)
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
         cudnn.benchmark = True
