@@ -315,10 +315,7 @@ def main():
         k=k.replace("features.11","features.12")
         pre_trained2[k]=v
             
-            
-    pre_trained['features.0.weight']=pre_trained['features.0.weight']
-    
-    model.load_state_dict(pre_trained)
+    model.load_state_dict(pre_trained2)
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
         cudnn.benchmark = True
