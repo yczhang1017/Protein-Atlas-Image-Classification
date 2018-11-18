@@ -147,7 +147,7 @@ custom-built SqueezeNet model
 import torch.nn.init as init
 import torch.utils.model_zoo as model_zoo
 from torchvision.models.squeezenet import model_urls
-
+import collections
 class Fire(nn.Module):
     def __init__(self, inplanes, squeeze_planes,
                  expand1x1_planes, expand3x3_planes):
@@ -308,6 +308,16 @@ def main():
     pre_trained=model_zoo.load_url(model_urls['squeezenet1_1'])
     con1_weight=pre_trained['features.0.weight']
     pre_trained['features.0.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,3,3)),1)
+    pre_trained2=collections.OrderedDict()
+    for _ in range(len(pre_trained)):
+        k,v=pre_trained.popitem(last=False)
+        k=k.replace("features.12","features.13")
+        k=k.replace("features.11","features.12")
+        pre_trained2[k]=v
+            
+            
+    pre_trained['features.0.weight']=pre_trained['features.0.weight']
+    
     model.load_state_dict(pre_trained)
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
