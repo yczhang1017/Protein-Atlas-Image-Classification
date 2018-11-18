@@ -295,7 +295,7 @@ def main():
     
     pre_trained=model_zoo.load_url(model_urls['resnet34'])
     con1_weight=pre_trained['conv1.weight']
-    pre_trained['conv1.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,3,3)),1)
+    pre_trained['conv1.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,7,7)),1)
     pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
     '''
     pre_trained2=collections.OrderedDict()
