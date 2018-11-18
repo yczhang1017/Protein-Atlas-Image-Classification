@@ -213,7 +213,7 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
 
-        return self.sigmoid(x)
+        return x
                 
 '''
 Focal loss to handle imbalance between foreground and background
@@ -221,16 +221,17 @@ from https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/65938
 https://arxiv.org/pdf/1708.02002.pdf
 '''
 class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=2, logits=False, reduce=True):
+    def __init__(self, alpha=1, gamma=2, logits=True, reduce=True, pos_weight=None ):
         super(FocalLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.logits = logits
         self.reduce = reduce
+        self.pos_weight =pos_weight
 
     def forward(self, inputs, targets):
         if self.logits:
-            BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets,reduction='none')
+            BCE_loss = F.binary_cross_entropy_with_logits(inputs,targets,reduction='none',pos_weight=self.pos_weight)
         else:
             BCE_loss = F.binary_cross_entropy(inputs, targets,reduction='none')
         pt = torch.exp(-BCE_loss).detach()
@@ -254,10 +255,13 @@ def main():
         for j in label:
             ids[j].append(key)
     #repeat training images with rare labels
-    repeat=[];
+    repeat=[];pos_weight=[];
     for i in range(NLABEL):
         repeat.append(int(np.power(len(label_dict)/len(ids[i]),0.2)))
+        pos_weight.append(len(label_dict)/len(ids[i]))
+    
     repeat=np.array(repeat)
+    pos_weight=torch.tensor(pos_weight)
     #Divide image ids into training and evaluation parts
     image_sets={'train': set(label_dict.keys()),
                  'val':set([]) }
@@ -324,7 +328,7 @@ def main():
     if torch.cuda.is_available():
         model = model.cuda()
     
-    criterion = nn.BCELoss()
+    criterion = FocalLoss(pos_weight=pos_weight)
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.5)
     t00 = time.time()
