@@ -35,7 +35,7 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
-parser.add_argument('--step_size', default=4, type=int,
+parser.add_argument('--step_size', default=5, type=int,
                     help='Number of steps for every learning rate decay')
 parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
@@ -348,6 +348,8 @@ def main():
                 model.eval()
             
             running_loss=0
+            running_prec=0
+            running_recall=0
             running_F1=0
             num=0 
             for inputs,targets in dataloader[phase]:
@@ -370,6 +372,9 @@ def main():
                 selected= torch.sum(propose,1).double()
                 relevant= torch.sum(targets,1).double()
                 if torch.sum(corrects==0)==0:
+                    running_prec+=corrects/selected
+                    running_recall+=corrects/relevant
+                '''
                     F1=2/(selected/corrects+relevant/corrects)
                     running_F1 +=torch.sum(F1).item()
                 else:
@@ -379,14 +384,19 @@ def main():
                     for i,c in enumerate(corrects):
                         if c>0:
                             running_F1 += 2/(s[i]/c+r[i]/c)
+                '''
                 if phase=='eval':
                     import pdb; pdb.set_trace()
+                    
+                    
                 average_loss = running_loss/num
-                average_F1 = running_F1/num
+                average_prec = running_prec/num
+                average_recall = running_recall/num
+                average_F1 = 2/(1/running_prec+1/running_recall)
                 t02 = time.time()
                 if num % (100*inputs.size(0))==0:
-                    print('{} Loss: {:.4f} Acc: {:.4f} Time: {:.4f}s'.format(
-                            num, average_loss, average_F1, t02-t01))
+                    print('{} L: {:.4f} p: {:.4f} r: {:.4f} F1: {:.4f} Time: {:.4f}s'.format(
+                            num,average_loss,average_prec,average_recall,average_F1,t02-t01))
             if phase == 'val' and average_F1 > best_F1:
                 best_F1 = average_F1
                 #best_model_wts = copy.deepcopy(model.state_dict())
