@@ -307,7 +307,7 @@ def main():
             k=k.replace("11","12")
             pre_trained2[k]=v
     '''     
-    model.features.load_state_dict(pre_trained)
+    model.load_state_dict(pre_trained)
     
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
