@@ -173,7 +173,7 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
-
+        self.sigmoid=nn.Sigmoid()
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -213,7 +213,7 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
 
-        return nn.Sigmoid(x)
+        return self.sigmoid(x)
                 
 '''
 Focal loss to handle imbalance between foreground and background
