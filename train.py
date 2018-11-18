@@ -35,7 +35,7 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
-parser.add_argument('--step_size', default=10, type=int,
+parser.add_argument('--step_size', default=2, type=int,
                     help='Number of steps for every learning rate decay')
 parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
@@ -326,7 +326,7 @@ def main():
     
     criterion = FocalLoss()
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.1)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.7)
     t00 = time.time()
     best_F1=0.0
     
