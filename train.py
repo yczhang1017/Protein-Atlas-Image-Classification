@@ -27,7 +27,7 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-2, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
@@ -35,7 +35,7 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
-parser.add_argument('--step_size', default=16, type=int,
+parser.add_argument('--step_size', default=10, type=int,
                     help='Number of steps for every learning rate decay')
 parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
@@ -310,6 +310,7 @@ def main():
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
     model =SqueezeNet(version=1.1)
+    '''
     pre_trained=model_zoo.load_url(model_urls['squeezenet1_1'])
     con1_weight=pre_trained['features.0.weight']
     pre_trained['features.0.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,3,3)),1)
@@ -323,6 +324,7 @@ def main():
             pre_trained2[k]=v
             
     model.features.load_state_dict(pre_trained2)
+    '''
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
         cudnn.benchmark = True
