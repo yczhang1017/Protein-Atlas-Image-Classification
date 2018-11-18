@@ -311,8 +311,9 @@ def main():
     pre_trained2=collections.OrderedDict()
     for _ in range(len(pre_trained)):
         k,v=pre_trained.popitem(last=False)
-        k=k.replace("features.12","features.13")
-        k=k.replace("features.11","features.12")
+        k=k.replace("features","")
+        k=k.replace("12","13")
+        k=k.replace("11","12")
         pre_trained2[k]=v
             
     model.features.load_state_dict(pre_trained2)
