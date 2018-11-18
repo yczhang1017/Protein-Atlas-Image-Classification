@@ -292,10 +292,11 @@ def main():
     for phase in ['train','val']:
         for im in image_sets[phase]:
             im_label=label_dict[im]
-            label_array=np.array(im_label)
-            im_repeat= np.max(repeat[label_array])
-            for i in range(im_repeat):
-                image_labels[phase].append((im,label_dict[im]))
+            image_labels[phase].append((im,im_label))
+            #label_array=np.array(im_label)
+            #im_repeat= np.max(repeat[label_array])
+            #for i in range(im_repeat):
+            #    
 
     dataset={x: ProteinDataset(args.root,x,image_labels[x]) 
             for x in ['train', 'val']}
