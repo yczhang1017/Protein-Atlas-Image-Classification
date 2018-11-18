@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import torchvision
 #from torchvision.transforms import transforms
 #from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
