@@ -363,7 +363,7 @@ def main():
                 running_loss += loss.item() * inputs.size(0)
                 propose=(outputs>0.5)
                 targets=targets.byte()
-                corrects= torch.sum(propose==targets,1).double()
+                corrects= torch.sum(propose*targets,1).double()
                 selected= torch.sum(propose,1).double()
                 relevant= torch.sum(targets,1).double()
                 if torch.sum(corrects==0)==0:
