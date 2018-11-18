@@ -372,8 +372,8 @@ def main():
                 selected= torch.sum(propose,1).double()
                 relevant= torch.sum(targets,1).double()
                 if torch.sum(corrects==0)==0:
-                    running_prec  +=torch.sum(corrects/selected)
-                    running_recall+=torch.sum(corrects/relevant)
+                    running_prec  +=torch.sum(corrects/selected).item()
+                    running_recall+=torch.sum(corrects/relevant).item()
                 '''
                     F1=2/(selected/corrects+relevant/corrects)
                     running_F1 +=torch.sum(F1).item()
@@ -392,7 +392,10 @@ def main():
                 average_loss = running_loss/num
                 average_prec = running_prec/num
                 average_recall = running_recall/num
-                average_F1 = 2/(1/running_prec+1/running_recall)
+                if running_prec==0 or running_recall==0:
+                    average_F1=0
+                else:
+                    average_F1 = 2/(1/running_prec+1/running_recall)
                 t02 = time.time()
                 if num % (100*inputs.size(0))==0:
                     print('{} L: {:.4f} p: {:.4f} r: {:.4f} F1: {:.4f} Time: {:.4f}s'.format(
