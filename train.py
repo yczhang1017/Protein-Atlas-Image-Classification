@@ -27,7 +27,7 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=1e-2, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
@@ -292,11 +292,15 @@ def main():
     for phase in ['train','val']:
         for im in image_sets[phase]:
             im_label=label_dict[im]
-            image_labels[phase].append((im,im_label))
-            #label_array=np.array(im_label)
-            #im_repeat= np.max(repeat[label_array])
-            #for i in range(im_repeat):
-            #    
+            
+            label_array=np.array(im_label)
+            im_repeat= np.max(repeat[label_array])
+            if phase=='val':
+                image_labels[phase].append((im,im_label))
+            else:
+                for i in range(im_repeat):
+                    image_labels[phase].append((im,im_label))
+                    
 
     dataset={x: ProteinDataset(args.root,x,image_labels[x]) 
             for x in ['train', 'val']}
