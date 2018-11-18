@@ -297,6 +297,7 @@ def main():
     con1_weight=pre_trained['conv1.weight']
     pre_trained['conv1.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,7,7)),1)
     pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
+    pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]
     '''
     pre_trained2=collections.OrderedDict()
     for _ in range(len(pre_trained)):
