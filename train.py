@@ -231,11 +231,12 @@ class FocalLoss(nn.Module):
 
     def forward(self, inputs, targets):
         if self.logits:
-            BCE_loss = F.binary_cross_entropy_with_logits(inputs,targets,reduction='none',pos_weight=self.pos_weight)
+            BCE_loss = F.binary_cross_entropy_with_logits(inputs,targets,reduction='none')
         else:
             BCE_loss = F.binary_cross_entropy(inputs, targets,reduction='none')
         pt = torch.exp(-BCE_loss).detach()
-        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
+        factor=(self.pos_weight*targets).clamp_(min=1)
+        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss *factor
 
         if self.reduce:
             return torch.mean(F_loss)
@@ -258,7 +259,7 @@ def main():
     repeat=[];pos_weight=[];
     for i in range(NLABEL):
         repeat.append(int(np.power(len(label_dict)/len(ids[i]),0.2)))
-        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.6))
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),1))
         
     repeat=np.array(repeat)
     pos_weight=torch.tensor(pos_weight)
