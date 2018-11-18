@@ -251,8 +251,7 @@ def main():
     
     image_labels={'train':[], 'val':[]}
     for phase in ['train','val']:
-        for i in image_sets[phase]:
-            im=image_sets[phase][i]
+        for im in image_sets[phase]:
             image_labels[phase].append(im,label_dict[im])
 
     dataset={x: ProteinDataset(args.root,x,image_labels[x]) 
