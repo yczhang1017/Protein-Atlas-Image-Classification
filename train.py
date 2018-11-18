@@ -204,7 +204,7 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        x = self.maxpool(x)
+        x = self.maxpool(x) #added maxpool
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
@@ -213,7 +213,7 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
 
-        return x
+        return nn.Sigmoid(x)
                 
 '''
 Focal loss to handle imbalance between foreground and background
