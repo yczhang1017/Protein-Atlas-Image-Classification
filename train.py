@@ -35,7 +35,7 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
-parser.add_argument('--step_size', default=14, type=int,
+parser.add_argument('--step_size', default=16, type=int,
                     help='Number of steps for every learning rate decay')
 parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
@@ -147,10 +147,10 @@ cfg = {
     'B': [64,'M',128,128,'M',256,256,'M',384,384,'M',384,384,'M']
     }
 def make_layers(cfg, batch_norm=True):
-    layers =[nn.Conv2d(4, 32,kernel_size=7,stride=2,padding=3,bias=False),
+    layers =[nn.Conv2d(4, 64,kernel_size=7,stride=2,padding=3,bias=False),
              nn.BatchNorm2d(32),
              nn.ReLU(inplace=True)]
-    in_channels = 32
+    in_channels = 64
     for v in cfg:
         if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
@@ -199,8 +199,33 @@ class VGG(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
                 
-                
+'''
+Focal loss to handle imbalance between foreground and background
+from https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/65938
+https://arxiv.org/pdf/1708.02002.pdf
+'''
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=1, gamma=2, logits=False, reduce=True):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.logits = logits
+        self.reduce = reduce
 
+    def forward(self, inputs, targets):
+        if self.logits:
+            BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduce=False)
+        else:
+            BCE_loss = F.binary_cross_entropy(inputs, targets, reduce=False)
+        pt = torch.exp(-BCE_loss)
+        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
+
+        if self.reduce:
+            return torch.mean(F_loss)
+        else:
+            return F_loss
+    
+    
 def main():
     csv_file=os.path.join(args.root,'train.csv')
     label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
@@ -213,22 +238,23 @@ def main():
         for j in label:
             ids[j].append(key)
     
-    image_labels={'train':[], 'val':[]}
+    image_sets={'train': set(label_dict.keys()),
+                 'val':set([]) }
     for l,ims in ids.items():
         ll=len(ims)
         vl=int(np.ceil(ll*0.1))
-        larray=list(range(ll))
         varray=np.random.choice(ll, vl, replace=False)
-        tarray=list(set(larray) - set(varray))
         for i in varray:
-            im=ims[int(i)]
-            image_labels['val'].append((im,label_dict[im]))
-        for i in tarray:
-            im=ims[int(i)]
-            image_labels['train'].append((im,label_dict[im]))
+            im=ims[i]
+            image_sets['val'].add(im)
+            image_sets['train'].discard(im)
     
-    
-    
+    image_labels={'train':[], 'val':[]}
+    for phase in ['train','val']:
+        for i in image_sets[phase]:
+            im=image_sets[phase][i]
+            image_labels[phase].append(im,label_dict[im])
+
     dataset={x: ProteinDataset(args.root,x,image_labels[x]) 
             for x in ['train', 'val']}
     dataloader={x: torch.utils.data.DataLoader(dataset[x],
@@ -250,7 +276,7 @@ def main():
     if torch.cuda.is_available():
         model = model.cuda()
     
-    criterion = nn.BCELoss()
+    criterion = FocalLoss()
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.1)
     t00 = time.time()
