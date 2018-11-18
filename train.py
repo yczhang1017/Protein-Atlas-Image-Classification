@@ -281,7 +281,7 @@ def main():
                  'val':set([]) }
     for l,ims in ids.items():
         ll=len(ims)
-        vl=int(ll*0.1)
+        vl=int(np.ceil(ll*0.05))
         varray=np.random.choice(ll, vl, replace=False)
         for i in varray:
             im=ims[i]
