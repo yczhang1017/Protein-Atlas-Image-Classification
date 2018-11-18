@@ -244,24 +244,24 @@ class FocalLoss(nn.Module):
     
     
 def main():
-csv_file=os.path.join(args.root,'train.csv')
-label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
-for key,label in label_dict.items():
-    label_dict[key]=[int(a) for a in label.split(' ')]
+    csv_file=os.path.join(args.root,'train.csv')
+    label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
+    for key,label in label_dict.items():
+        label_dict[key]=[int(a) for a in label.split(' ')]
+        
     
-
-ids={i:[] for i in range(NLABEL)}
-for key,label in label_dict.items():
-    for j in label:
-        ids[j].append(key)
-#repeat training images with rare labels
-repeat=[];pos_weight=[];
-for i in range(NLABEL):
-    repeat.append(int(np.power(len(label_dict)/len(ids[i]),0.2)))
-    pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.6))
-    
-repeat=np.array(repeat)
-pos_weight=torch.tensor(pos_weight)
+    ids={i:[] for i in range(NLABEL)}
+    for key,label in label_dict.items():
+        for j in label:
+            ids[j].append(key)
+    #repeat training images with rare labels
+    repeat=[];pos_weight=[];
+    for i in range(NLABEL):
+        repeat.append(int(np.power(len(label_dict)/len(ids[i]),0.2)))
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.6))
+        
+    repeat=np.array(repeat)
+    pos_weight=torch.tensor(pos_weight)
     #Divide image ids into training and evaluation parts
     image_sets={'train': set(label_dict.keys()),
                  'val':set([]) }
