@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import torchvision
 #from torchvision.transforms import transforms
 #from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
@@ -96,8 +95,10 @@ class ProteinDataset(torch.utils.data.Dataset):
         self.phase=phase
         self.transform = transform
         self.size=size
-        
-        self.img_dir=os.path.join(root,phase+'_img')
+        if not phase=='test':
+            self.img_dir=os.path.join(root,'train_img')
+        else:
+            self.img_dir=os.path.join(root,'test_img')
         self.colors=['red','green','blue','yellow']
         self.image_labels=image_labels
         if image_labels==None:
@@ -140,63 +141,95 @@ class ProteinDataset(torch.utils.data.Dataset):
 
  
 '''
-custom-built vgg model
+custom-built SqueezeNet model
 '''
-cfg = {
-    'A': [64,'M',128,'M',256,'M',384,'M',384,'M'],
-    'B': [64,'M',128,128,'M',256,256,'M',384,384,'M',384,384,'M']
-    }
-def make_layers(cfg, in_channels = 32, batch_norm=True):
-    layers =[nn.Conv2d(4, in_channels,kernel_size=7,stride=2,padding=3,bias=False),
-             nn.BatchNorm2d(in_channels),
-             nn.ReLU(inplace=True)]
-    for v in cfg:
-        if v == 'M':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
-        else:
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-            if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
-            else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
-            in_channels = v
-    return nn.Sequential(*layers)
+import torch.nn.init as init
+import torch.utils.model_zoo as model_zoo
+from torchvision.models.squeezenet import model_urls
 
+class Fire(nn.Module):
+    def __init__(self, inplanes, squeeze_planes,
+                 expand1x1_planes, expand3x3_planes):
+        super(Fire, self).__init__()
+        self.inplanes = inplanes
+        self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
+        self.squeeze_activation = nn.ReLU(inplace=True)
+        self.expand1x1 = nn.Conv2d(squeeze_planes, expand1x1_planes,
+                                   kernel_size=1)
+        self.expand1x1_activation = nn.ReLU(inplace=True)
+        self.expand3x3 = nn.Conv2d(squeeze_planes, expand3x3_planes,
+                                   kernel_size=3, padding=1)
+        self.expand3x3_activation = nn.ReLU(inplace=True)
 
-class VGG(nn.Module):
-    def __init__(self, features, num_classes=NLABEL, init_weights=True):
-        super(VGG, self).__init__()
-        self.features = features
-                
-        self.classifier = nn.Sequential(
-            nn.Linear(384 * 8 * 8, 2048),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(2048, 2048),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(2048, num_classes),
-            nn.Sigmoid(),
-        )
-        if init_weights:
-            self._initialize_weights()
     def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-        return x
-    def _initialize_weights(self):
+        x = self.squeeze_activation(self.squeeze(x))
+        return torch.cat([
+            self.expand1x1_activation(self.expand1x1(x)),
+            self.expand3x3_activation(self.expand3x3(x))
+        ], 1)
+class SqueezeNet(nn.Module):
+    def __init__(self, version=1.1, num_classes=NLABEL):
+        super(SqueezeNet, self).__init__()
+        if version not in [1.0, 1.1]:
+            raise ValueError("Unsupported SqueezeNet version {version}:"
+                             "1.0 or 1.1 expected".format(version=version))
+        self.num_classes = num_classes
+        if version == 1.0:
+            self.features = nn.Sequential(
+                nn.Conv2d(4, 96, kernel_size=7, stride=2),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                Fire(96, 16, 64, 64),
+                Fire(128, 16, 64, 64),
+                Fire(128, 32, 128, 128),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True), #added maxpool
+                Fire(256, 32, 128, 128),
+                Fire(256, 48, 192, 192),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                Fire(384, 48, 192, 192),
+                Fire(384, 64, 256, 256),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                Fire(512, 64, 256, 256),
+            )
+        else:
+            self.features = nn.Sequential(
+                nn.Conv2d(4, 64, kernel_size=3, stride=2),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                Fire(64, 16, 64, 64),
+                Fire(128, 16, 64, 64),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                Fire(128, 32, 128, 128),
+                Fire(256, 32, 128, 128),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                Fire(256, 48, 192, 192),
+                Fire(384, 48, 192, 192),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True), #added maxpool
+                Fire(384, 64, 256, 256),
+                Fire(512, 64, 256, 256),
+            )
+        # Final convolution is initialized differently form the rest
+        final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=0.5),
+            final_conv,
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((1, 1))
+        )
+
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m is final_conv:
+                    init.normal_(m.weight, mean=0.0, std=0.01)
+                else:
+                    init.kaiming_uniform_(m.weight)
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
-                nn.init.constant_(m.bias, 0)
+                    init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.classifier(x)
+        return x.view(x.size(0), self.num_classes)
                 
 '''
 Focal loss to handle imbalance between foreground and background
@@ -236,12 +269,17 @@ def main():
     for key,label in label_dict.items():
         for j in label:
             ids[j].append(key)
-    
+    #repeat training images with rare labels
+    repeat=[];
+    for i in range(NLABEL):
+        repeat.append(int(np.power(len(label_dict)/len(ids[i]),0.2)))
+    repeat=np.array(repeat)
+    #Divide image ids into training and evaluation parts
     image_sets={'train': set(label_dict.keys()),
                  'val':set([]) }
     for l,ims in ids.items():
         ll=len(ims)
-        vl=int(np.ceil(ll*0.1))
+        vl=int(ll*0.1)
         varray=np.random.choice(ll, vl, replace=False)
         for i in varray:
             im=ims[i]
@@ -251,7 +289,11 @@ def main():
     image_labels={'train':[], 'val':[]}
     for phase in ['train','val']:
         for im in image_sets[phase]:
-            image_labels[phase].append((im,label_dict[im]))
+            im_label=label_dict[im]
+            label_array=np.array(im_label)
+            im_repeat= np.max(repeat[label_array])
+            for i in range(im_repeat):
+                image_labels[phase].append((im,label_dict[im]))
 
     dataset={x: ProteinDataset(args.root,x,image_labels[x]) 
             for x in ['train', 'val']}
@@ -259,7 +301,12 @@ def main():
             batch_size=args.batch_size,shuffle=True,num_workers=args.workers,pin_memory=True)
             for x in ['train', 'val']}
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
-    model = VGG(make_layers(cfg[args.type], batch_norm=True))
+    #model = VGG(make_layers(cfg[args.type], batch_norm=True))
+    model =SqueezeNet(version=1.1)
+    pre_trained=model_zoo.load_url(model_urls['squeezenet1_1'])
+    con1_weight=pre_trained['features.0.weight']
+    pre_trained['features.0.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,3,3)),1)
+    
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
         cudnn.benchmark = True
@@ -270,7 +317,6 @@ def main():
         model.load_state_dict(torch.load(weight_file,
                                  map_location=lambda storage, loc: storage))
         
-            
     if torch.cuda.is_available():
         model = model.cuda()
     
