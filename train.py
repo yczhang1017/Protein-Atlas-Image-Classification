@@ -372,8 +372,8 @@ def main():
                 selected= torch.sum(propose,1).double()
                 relevant= torch.sum(targets,1).double()
                 if torch.sum(corrects==0)==0:
-                    running_prec+=corrects/selected
-                    running_recall+=corrects/relevant
+                    running_prec  +=torch.sum(corrects/selected)
+                    running_recall+=torch.sum(corrects/relevant)
                 '''
                     F1=2/(selected/corrects+relevant/corrects)
                     running_F1 +=torch.sum(F1).item()
