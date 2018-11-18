@@ -146,11 +146,10 @@ cfg = {
     'A': [64,'M',128,'M',256,'M',384,'M',384,'M'],
     'B': [64,'M',128,128,'M',256,256,'M',384,384,'M',384,384,'M']
     }
-def make_layers(cfg, batch_norm=True):
-    layers =[nn.Conv2d(4, 64,kernel_size=7,stride=2,padding=3,bias=False),
-             nn.BatchNorm2d(32),
+def make_layers(cfg, in_channels = 64, batch_norm=True):
+    layers =[nn.Conv2d(4, in_channels,kernel_size=7,stride=2,padding=3,bias=False),
+             nn.BatchNorm2d(in_channels),
              nn.ReLU(inplace=True)]
-    in_channels = 64
     for v in cfg:
         if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
