@@ -232,7 +232,7 @@ class FocalLoss(nn.Module):
     def forward(self, inputs, targets):
         if self.logits:
             BCE_loss = F.binary_cross_entropy_with_logits(inputs,targets,
-                    reduction='none',pos_weights=self.pos_weight)
+                    reduction='none',pos_weight=self.pos_weight)
         else:
             BCE_loss = F.binary_cross_entropy(inputs, targets,reduction='none')
         pt = torch.exp(-BCE_loss).detach()
