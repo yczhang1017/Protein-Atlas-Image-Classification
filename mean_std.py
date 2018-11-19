@@ -6,6 +6,7 @@ import scipy.misc
 from matplotlib import pyplot as plt
 from torchvision import transforms
 import torch
+import pickle
 
 csv_file=os.path.join('./','train.csv')
 label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
@@ -14,6 +15,7 @@ colors=['blue','red','yellow','green'];mode='CMYK'
 mean=dict()
 std=dict()
 images=label_dict.keys()
+
 for color in colors:
     all_mean=0
     all_var=0
@@ -32,6 +34,10 @@ for color in colors:
             print(i,len(label_dict),all_mean/(i+1),all_var/(i+1))
     mean[color]=all_mean/len(images)
     std[color]=np.sqrt(all_var/len(images))
+    
+with open('mean_std.pkl', 'w') as f:
+    pickle.dump(list(mean.values()), f)
+    pickle.dump(list(std.values()), f)
 print(list(mean.values()))
 print(list(std.values()))
 '''dim=img4t.shape[0]
