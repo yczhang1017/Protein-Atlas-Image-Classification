@@ -13,10 +13,11 @@ image_dir=os.path.join('./','train_img')
 colors=['blue','red','yellow','green'];mode='CMYK'
 mean=dict()
 std=dict()
+#images=label_dict.keys()
 for color in colors:
     all_mean=0
     all_var=0
-    for i,img in enumerate(label_dict.keys()):
+    for i,img in enumerate(images):
         img_l4=[]
         image=os.path.join(image_dir,img+'_'+color+'.png')
             
@@ -25,12 +26,12 @@ for color in colors:
         transform= transforms.Compose(
                     [transforms.ToTensor()])       
         img4t=transform(img4)     
-        all_mean+=img4t.mean(0).mean(0).item()
-        all_var+=img4t.var(0).var(0).item()
-        if (i+1)%1000==0:
+        all_mean+=img4t.mean().item()
+        all_var+=img4t.var().item()
+        if (i+1)%1==0:
             print(i,len(label_dict),all_mean/(i+1),all_var/(i+1))
-    mean[color]=all_mean/len(label_dict)
-    std[color]=np.sqrt(all_var/len(label_dict))
+    mean[color]=all_mean/len(images)
+    std[color]=np.sqrt(all_var/len(images))
 print(mean)
 print(std)
 '''dim=img4t.shape[0]
