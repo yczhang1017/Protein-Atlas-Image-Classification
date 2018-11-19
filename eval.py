@@ -78,7 +78,7 @@ def main():
         for inputs,targets in dataloader:
             inputs = inputs.to(device)
             outputs = model(inputs)
-            score=outputs.cpu().numpy()
+            score=outputs.sigmoid().cpu().numpy()
             count=score.shape[0]
             for j in range(count):
                 image_id=image_label[num][0]

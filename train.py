@@ -393,7 +393,7 @@ def main():
                         optimizer.step()
                 num += inputs.size(0)
                 running_loss += loss.item() * inputs.size(0)
-                propose=(outputs>0.5)
+                propose=(outputs.sigmoid()>0.5)
                 targets=targets.byte()
                 corrects= torch.sum(propose*targets,1).double().cpu().numpy()
                 selected= torch.sum(propose,1).double().cpu().numpy()
