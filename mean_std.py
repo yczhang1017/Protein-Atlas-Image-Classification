@@ -12,8 +12,8 @@ csv_file=os.path.join('./','train.csv')
 label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
 image_dir=os.path.join('./','train_img')
 colors=['blue','red','yellow','green'];mode='CMYK'
-mean=dict()
-std=dict()
+mean=[]
+std=[]
 images=list(label_dict.keys())
 randl=np.random.choice(len(images), int(len(images)/5), replace=False)#
 for color in colors:
@@ -33,15 +33,15 @@ for color in colors:
         all_var+=img4t.var().item()
         if (i+1)%300==0:
             print(i,len(label_dict),all_mean/(i+1),all_var/(i+1))
-    mean[color]=all_mean/len(randl)
-    std[color]=np.sqrt(all_var/len(randl))
+    mean.append(all_mean/len(randl))
+    std.append(np.sqrt(all_var/len(randl)))
 '''   
 with open('mean_std.pkl', 'w') as f:
     pickle.dump(list(mean.values()), f)
     pickle.dump(list(std.values()), f)
 '''
-print(list(mean.values()))
-print(list(std.values()))
+print(mean)
+print(std)
 '''dim=img4t.shape[0]
     if i==0:
         image_means =mean.view(1,dim)
