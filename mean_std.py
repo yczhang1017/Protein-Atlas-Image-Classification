@@ -28,12 +28,12 @@ for color in colors:
         img4t=transform(img4)     
         all_mean+=img4t.mean().item()
         all_var+=img4t.var().item()
-        if (i+1)%1==0:
+        if (i+1)%300==0:
             print(i,len(label_dict),all_mean/(i+1),all_var/(i+1))
     mean[color]=all_mean/len(images)
     std[color]=np.sqrt(all_var/len(images))
-print(mean)
-print(std)
+print(list(mean.values()))
+print(list(std.values()))
 '''dim=img4t.shape[0]
     if i==0:
         image_means =mean.view(1,dim)
