@@ -33,8 +33,8 @@ for color in colors:
         all_var+=img4t.var().item()
         if (i+1)%300==0:
             print(i,len(label_dict),all_mean/(i+1),all_var/(i+1))
-    mean[color]=all_mean/len(images)
-    std[color]=np.sqrt(all_var/len(images))
+    mean[color]=all_mean/len(randl)
+    std[color]=np.sqrt(all_var/len(randl))
 '''   
 with open('mean_std.pkl', 'w') as f:
     pickle.dump(list(mean.values()), f)
