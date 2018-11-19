@@ -13,7 +13,7 @@ image_dir=os.path.join('./','train_img')
 colors=['blue','red','yellow','green'];mode='CMYK'
 mean=dict()
 std=dict()
-#images=label_dict.keys()
+images=label_dict.keys()
 for color in colors:
     all_mean=0
     all_var=0
