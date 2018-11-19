@@ -1,4 +1,4 @@
-from train import ProteinDataset,VGG,make_layers,cfg,NAME,NLABEL
+from train import ProteinDataset,ResNet,BasicBlock,NAME,NLABEL
 import os
 import numpy as np
 import pandas as pd
@@ -18,10 +18,9 @@ parser.add_argument('--workers', default=8, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
-parser.add_argument('--checkpoint', default='A/A_38.pth', type=str,
+parser.add_argument('--checkpoint', default='res34_1/out_24.pth', type=str,
                     help='Trained state_dict file path to open')
-parser.add_argument('--type', default='A', choices=['A', 'B'], type=str,
-                    help='type of the model')
+
 
 args = parser.parse_args()
 if not os.path.exists(args.results):
@@ -49,7 +48,9 @@ def main():
     dataloader=torch.utils.data.DataLoader(dataset,
                 batch_size=args.batch_size,shuffle=False,num_workers=args.workers,pin_memory=True)
     
-    model = VGG(make_layers(cfg[args.type], batch_norm=True))
+    #model = VGG(make_layers(cfg[args.type], batch_norm=True))
+    model = ResNet(BasicBlock, [3, 4, 6, 3])
+    
     
     if torch.cuda.is_available():
             model=nn.DataParallel(model)
