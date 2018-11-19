@@ -288,7 +288,7 @@ def main():
     for i in range(NLABEL):
         rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
         repeat.append(rep)
-        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),1)/rep)
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.5)/rep)
         
     repeat=np.array(repeat)
     pos_weight=torch.tensor(pos_weight)
@@ -359,8 +359,8 @@ def main():
     if torch.cuda.is_available():
         model = model.cuda()
     
-    criterion = FocalLoss(pos_weight=pos_weight)
-    #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    #criterion = FocalLoss(pos_weight=pos_weight)
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.5)
     t00 = time.time()
