@@ -14,12 +14,13 @@ image_dir=os.path.join('./','train_img')
 colors=['blue','red','yellow','green'];mode='CMYK'
 mean=dict()
 std=dict()
-images=label_dict.keys()
-
+images=list(label_dict.keys())
+randl=np.random.choice(len(images), int(len(images)/10))
 for color in colors:
     all_mean=0
     all_var=0
-    for i,img in enumerate(images):
+    for i,ind in enumerate(randl):
+        img=images[ind]
         img_l4=[]
         image=os.path.join(image_dir,img+'_'+color+'.png')
             
