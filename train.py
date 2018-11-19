@@ -376,25 +376,13 @@ def main():
                         running_prec +=corrects[i]/selected[i]
                         running_recall+= corrects[i]/relevant[i]
                     
-                '''
-                    F1=2/(selected/corrects+relevant/corrects)
-                    running_F1 +=torch.sum(F1).item()
-                else:
-                    corrects=corrects.cpu().numpy()
-                    s=selected.cpu().numpy()
-                    r=relevant.cpu().numpy()
-                    for i,c in enumerate(corrects):
-                        if c>0:
-                            running_F1 += 2/(s[i]/c+r[i]/c)
-                '''
-                
                 average_loss = running_loss/num
                 average_prec = running_prec/num
                 average_recall = running_recall/num
                 if running_prec==0 or running_recall==0:
                     average_F1=0
                 else:
-                    average_F1 = 2/(1/running_prec+1/running_recall)
+                    average_F1 = 2/(1/average_prec+1/average_recall)
                 t02 = time.time()
                 if num % (100*inputs.size(0))==0:
                     print('{} L: {:.4f} p: {:.4f} r: {:.4f} F1: {:.4f} Time: {:.4f}s'.format(
