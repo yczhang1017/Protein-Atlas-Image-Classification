@@ -36,7 +36,7 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
-parser.add_argument('--step_size', default=5, type=int,
+parser.add_argument('--step_size', default=8, type=int,
                     help='Number of steps for every learning rate decay')
 parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
@@ -90,6 +90,21 @@ if torch.cuda.is_available():
 else:
     torch.set_default_tensor_type(torch.FloatTensor)
     device = torch.device("cpu")
+
+transform=dict() 
+mean=[0.054813755064775954, 0.0808928726780973, 0.08367144133595689, 0.05226083561943362]
+std=[0.15201123862047256, 0.14087982537762958, 0.139965362113942, 0.10123220339551285]
+transform['train']=transforms.Compose(
+    [transforms.RandomResizedCrop(512),
+     transforms.RandomHorizontalFlip(),
+     transforms.RandomVerticalFlip(),
+     transforms.RandomRotation(20),
+     transforms.ToTensor(),
+     transforms.Normalize(mean,std)])
+transform['val']=transforms.Compose(
+    [transforms.ToTensor(),
+     transforms.Normalize(mean,std)])
+
 
 class ProteinDataset(torch.utils.data.Dataset):
     def __init__(self,root,phase,image_labels=None, size=None ,transform=None):
@@ -234,7 +249,7 @@ from https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/65938
 https://arxiv.org/pdf/1708.02002.pdf
 '''
 class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=2, logits=True, reduce=True, pos_weight=None ):
+    def __init__(self, alpha=1, gamma=0, logits=True, reduce=True, pos_weight=None ):
         super(FocalLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
@@ -303,19 +318,7 @@ def main():
                     image_labels[phase].append((im,im_label))
                     
                     
-    transform=dict() 
-    mean=[0.054813755064775954, 0.0808928726780973, 0.08367144133595689, 0.05226083561943362]
-    std=[0.15201123862047256, 0.14087982537762958, 0.139965362113942, 0.10123220339551285]
-    transform['train']=transforms.Compose(
-        [transforms.RandomResizedCrop(512),
-         transforms.RandomHorizontalFlip(),
-         transforms.RandomVerticalFlip(),
-         transforms.RandomRotation(20),
-         transforms.ToTensor(),
-         transforms.Normalize(mean,std)])
-    transform['val']=transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Normalize(mean,std)])
+
     dataset={x: ProteinDataset(args.root,x,image_labels[x],transform=transform[x]) 
             for x in ['train', 'val']}
     dataloader={x: torch.utils.data.DataLoader(dataset[x],

@@ -1,4 +1,4 @@
-from train import ProteinDataset,ResNet,BasicBlock,NAME,NLABEL
+from train import ProteinDataset,ResNet,BasicBlock,NAME,NLABEL,transform
 import os
 import numpy as np
 import pandas as pd
@@ -41,7 +41,7 @@ def main():
         name=label_dict.loc[i]['Id']
         images.append(name)
     
-    dataset=ProteinDataset(args.root,'test',images) 
+    dataset=ProteinDataset(args.root,'test',images,transform=transform['val']) 
     dataloader=torch.utils.data.DataLoader(dataset,
                 batch_size=args.batch_size,shuffle=False,num_workers=args.workers,pin_memory=True)
     
@@ -73,14 +73,13 @@ def main():
         for inputs in dataloader:
             inputs = inputs.to(device)
             outputs = model(inputs)
-            score=outputs.sigmoid().cpu().numpy()
-            count=score.shape[0]
+            propose= (outputs.sigmoid().cpu()>0.5).numpy()
+            count=propose.shape[0]
             for j in range(count):
                 image_id=images[num]
-                propose=score[j,:]>0.5
                 predicts=list(propose.nonzero()[0]) 
                 if len(predicts)==0:
-                    predicts=np.argmax(score[j,:])
+                    predicts=np.argmax(propose[j,:])
                     f.write(image_id+','+str(predicts)+'\n')
                 else:
                     predicts=sorted(predicts,key=lambda kv: NAME[kv])
