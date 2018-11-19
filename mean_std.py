@@ -15,7 +15,7 @@ colors=['blue','red','yellow','green'];mode='CMYK'
 mean=dict()
 std=dict()
 images=list(label_dict.keys())
-randl=np.random.choice(len(images), int(len(images)/10))
+randl=np.random.choice(len(images), int(len(images)/5), replace=False)#
 for color in colors:
     all_mean=0
     all_var=0
