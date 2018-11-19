@@ -2,13 +2,14 @@
 import os
 import numpy as np
 import pandas as pd
-import imageio
+#import imageio
+import PIL
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torchvision
-#from torchvision.transforms import transforms
+from torchvision.transforms import transforms
 #from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
 import time
@@ -100,7 +101,9 @@ class ProteinDataset(torch.utils.data.Dataset):
             self.img_dir=os.path.join(root,'train_img')
         else:
             self.img_dir=os.path.join(root,'test_img')
-        self.colors=['red','green','blue','yellow']
+        self.colors=['blue','red','yellow','green'];
+        self.mode='CMYK'
+        
         self.image_labels=image_labels
         if image_labels==None:
             files=os.listdir(self.img_dir)
@@ -108,6 +111,7 @@ class ProteinDataset(torch.utils.data.Dataset):
                 if img.endswith('blue.png'):
                     ims=img.split('_')
                     self.images+=[ims[0]]
+        
         #csv_file=os.path.join(root,'train.csv')
         #self.labels=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
         #for key in self.labels.keys():
@@ -120,14 +124,23 @@ class ProteinDataset(torch.utils.data.Dataset):
             img_id=self.image_labels[index]
             
         im_tensor=torch.zeros((len(self.colors),512,512),device="cpu")
+        img_l4=[]
+        for j,color in enumerate(self.colors):
+            image_dir=os.path.join(self.img_dir,img_id+'_'+color+'.png')
+            img_l4.append(PIL.Image.open(image_dir))
+        img=PIL.Image.merge(mode=self.mode,bands=img_l4)
+        
+        '''
         for j,color in enumerate(self.colors):
             image_dir=os.path.join(self.img_dir,img_id+'_'+color+'.png')
             image=imageio.imread(image_dir)
             im_tensor[j,:,:]=torch.tensor(image,dtype=torch.float,device="cpu")/256
+        '''
+        if self.transform is not None:
+            im_tensor = self.transform(img)
         if self.size is not None:
             im_tensor=F.adaptive_avg_pool2d(im_tensor, self.size)    
-        if self.transform is not None:
-            im_tensor = self.transform(im_tensor)
+        
         
         if not self.phase in ['test']:
             target=torch.zeros((NLABEL),device="cpu")
@@ -144,7 +157,7 @@ class ProteinDataset(torch.utils.data.Dataset):
 '''
 custom-built SqueezeNet model
 '''
-import torch.nn.init as init
+
 import torch.utils.model_zoo as model_zoo
 from torchvision.models.resnet import model_urls,Bottleneck,BasicBlock
 import collections
@@ -289,8 +302,21 @@ def main():
                 for i in range(im_repeat):
                     image_labels[phase].append((im,im_label))
                     
-
-    dataset={x: ProteinDataset(args.root,x,image_labels[x]) 
+                    
+    transform=dict() 
+    mean=[0.054813755064775954, 0.0808928726780973, 0.08367144133595689, 0.05226083561943362]
+    std=[0.15201123862047256, 0.14087982537762958, 0.139965362113942, 0.10123220339551285]
+    transform['train']=transforms.Compose(
+        [transforms.RandomResizedCrop(512),
+         transforms.RandomHorizontalFlip(),
+         transforms.RandomVerticalFlip(),
+         transforms.RandomRotation(20),
+         transforms.ToTensor(),
+         transforms.Normalize(mean,std)])
+    transform['val']=transforms.Compose(
+        [transforms.ToTensor(),
+         transforms.Normalize(mean,std)])
+    dataset={x: ProteinDataset(args.root,x,image_labels[x],transform=transform[x]) 
             for x in ['train', 'val']}
     dataloader={x: torch.utils.data.DataLoader(dataset[x],
             batch_size=args.batch_size,shuffle=True,num_workers=args.workers,pin_memory=True)
@@ -336,7 +362,8 @@ def main():
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.5)
     t00 = time.time()
     best_F1=0.0
-    
+    for i in range(args.resume_epoch):
+        scheduler.step()
     for epoch in range(args.epochs):
         print('Epoch {}/{}'.format(epoch+1, args.epochs))
         print('-' * 5)
