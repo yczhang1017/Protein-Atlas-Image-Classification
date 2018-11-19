@@ -368,13 +368,14 @@ def main():
                 running_loss += loss.item() * inputs.size(0)
                 propose=(outputs>0.5)
                 targets=targets.byte()
-                corrects= torch.sum(propose*targets,1).double()
-                selected= torch.sum(propose,1).double()
-                relevant= torch.sum(targets,1).double()
-                if torch.sum(corrects==0)==0:
-                    running_prec  +=torch.sum(corrects/selected).item()
-                    running_recall+=torch.sum(corrects/relevant).item()
-                import pdb; pdb.set_trace()
+                corrects= torch.sum(propose*targets,1).double().cpu().numpy()
+                selected= torch.sum(propose,1).double().cpu().numpy()
+                relevant= torch.sum(targets,1).double().cpu().numpy()
+                for i,c in enumerate(corrects):
+                    if c>0:
+                        running_prec +=corrects[i]/selected[i]
+                        running_recall+= corrects[i]/relevant[i]
+                    
                 '''
                     F1=2/(selected/corrects+relevant/corrects)
                     running_F1 +=torch.sum(F1).item()
