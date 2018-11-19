@@ -35,10 +35,11 @@ for color in colors:
             print(i,len(label_dict),all_mean/(i+1),all_var/(i+1))
     mean[color]=all_mean/len(images)
     std[color]=np.sqrt(all_var/len(images))
-    
+'''   
 with open('mean_std.pkl', 'w') as f:
     pickle.dump(list(mean.values()), f)
     pickle.dump(list(std.values()), f)
+'''
 print(list(mean.values()))
 print(list(std.values()))
 '''dim=img4t.shape[0]
