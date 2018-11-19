@@ -25,10 +25,10 @@ for color in colors:
         transform= transforms.Compose(
                     [transforms.ToTensor()])       
         img4t=transform(img4)     
-        all_mean+=img4t.mean(2).mean(1).item()
-        all_var+=img4t.var(2).var(1).item()
-        if i%1000==0:
-            print(i,len(label_dict))
+        all_mean+=img4t.mean(0).mean(0).item()
+        all_var+=img4t.var(0).var(0).item()
+        if (i+1)%1000==0:
+            print(i,len(label_dict),all_mean/(i+1),all_var/(i+1))
     mean[color]=all_mean/len(label_dict)
     std[color]=np.sqrt(all_var/len(label_dict))
 print(mean)
