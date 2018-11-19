@@ -20,6 +20,8 @@ parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
 parser.add_argument('--checkpoint', default='res34_1/out_24.pth', type=str,
                     help='Trained state_dict file path to open')
+parser.add_argument('--type', default='res34', type=str,
+                    help='type of the model')
 
 args = parser.parse_args()
 if not os.path.exists(args.results):
