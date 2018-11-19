@@ -374,6 +374,7 @@ def main():
                 if torch.sum(corrects==0)==0:
                     running_prec  +=torch.sum(corrects/selected).item()
                     running_recall+=torch.sum(corrects/relevant).item()
+                import pdb; pdb.set_trace()
                 '''
                     F1=2/(selected/corrects+relevant/corrects)
                     running_F1 +=torch.sum(F1).item()
@@ -385,10 +386,7 @@ def main():
                         if c>0:
                             running_F1 += 2/(s[i]/c+r[i]/c)
                 '''
-                if phase=='eval':
-                    import pdb; pdb.set_trace()
-                    
-                    
+                
                 average_loss = running_loss/num
                 average_prec = running_prec/num
                 average_recall = running_recall/num
