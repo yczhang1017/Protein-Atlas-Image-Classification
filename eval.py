@@ -82,7 +82,7 @@ def main():
             count=propose.shape[0]
             for j in range(count):
                 image_id=image_label[num][0]
-                predicts=list(propose.nonzero()[0]) 
+                predicts=list(propose[j,:].nonzero()[0]) 
                 if len(predicts)==0:
                     predicts=np.argmax(propose[j,:])
                     f.write(image_id+','+str(predicts)+'\n')
