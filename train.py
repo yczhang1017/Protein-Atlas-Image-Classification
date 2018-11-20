@@ -362,12 +362,12 @@ def main():
     #criterion = FocalLoss(pos_weight=pos_weight)
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.5)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.3)
     t00 = time.time()
     best_F1=0.0
     for i in range(args.resume_epoch):
         scheduler.step()
-    for epoch in range(args.epochs):
+    for epoch in range(args.resume_epoch,args.epochs):
         print('Epoch {}/{}'.format(epoch+1, args.epochs))
         print('-' * 5)
         for phase in ['train','val']:
@@ -420,7 +420,7 @@ def main():
             if phase == 'val' and average_F1 > best_F1:
                 best_F1 = average_F1
                 #best_model_wts = copy.deepcopy(model.state_dict())
-                torch.save(model.state_dict(),os.path.join(args.root,args.save_folder,'out_'+str(epoch+1)+'.pth'))
+            torch.save(model.state_dict(),os.path.join(args.root,args.save_folder,'out_'+str(epoch+1)+'.pth'))
         print()
         
 if __name__ == '__main__':
