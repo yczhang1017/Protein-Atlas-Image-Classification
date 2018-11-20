@@ -36,7 +36,7 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
-parser.add_argument('--step_size', default=5, type=int,
+parser.add_argument('--step_size', default=4, type=int,
                     help='Number of steps for every learning rate decay')
 parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
