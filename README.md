@@ -8,7 +8,7 @@
 - The weights of my trained model may be found on Google Drive.
 
 The following command trains the model from a resumed checkpoint and still runs if I closed the SSH session:
-'''
+```
 nohup python3 -u train.py --checkpoint 'save/out_1.pth' --resume_epoch 1 > aa.log </dev/null 2>&1&
 echo $! > pid.txt
-'''
+```
