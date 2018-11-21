@@ -427,8 +427,8 @@ def main():
                     print('{} L: {:.4f} p: {:.4f} r: {:.4f} F1: {:.4f} Time: {:.4f}s'.format(
                             num,average_loss,average_prec,average_recall,average_F1,t02-t01))
             
-            class_prec=(correct_class.double()/selected_class.double()*100).cup().numpy()
-            class_recall=(correct_class.double()/relevant_class.double()*100).cup().numpy()
+            class_prec=(correct_class.double()/selected_class.double()*100).cpu().numpy()
+            class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
             print(phase)
             print('c:'+''.join('{:4d}'.format(i) for i in range(NLABEL)))
             #print('n:'+'\t'.join('{:4d}'.format(i) for i in correct_class.numpy()))
