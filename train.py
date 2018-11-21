@@ -362,7 +362,7 @@ def main():
     criterion = FocalLoss(gamma=1,pos_weight=pos_weight)
     #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.1)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.3)
     t00 = time.time()
     best_F1=0.0
     for i in range(args.resume_epoch):
