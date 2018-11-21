@@ -362,7 +362,7 @@ def main():
     #criterion = FocalLoss(pos_weight=pos_weight)
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.3)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.1)
     t00 = time.time()
     best_F1=0.0
     for i in range(args.resume_epoch):
@@ -381,6 +381,9 @@ def main():
             running_prec=0
             running_recall=0
             running_F1=0
+            correct_class=torch.zeros(NLABEL,dtype=torch.int64)
+            selected_class=torch.zeros(NLABEL,dtype=torch.int64)
+            relevant_class=torch.zeros(NLABEL,dtype=torch.int64)
             num=0 
             for inputs,targets in dataloader[phase]:
                 t01 = time.time()
@@ -398,9 +401,15 @@ def main():
                 running_loss += loss.item() * inputs.size(0)
                 propose=(outputs.sigmoid()>0.5)
                 targets=targets.byte()
+                
+                correct_class+=torch.sum(propose*targets,0)
+                selected_class+=torch.sum(propose,0)
+                relevant_class+=torch.sum(targets,0)
+                
                 corrects= torch.sum(propose*targets,1).double().cpu().numpy()
                 selected= torch.sum(propose,1).double().cpu().numpy()
                 relevant= torch.sum(targets,1).double().cpu().numpy()
+                
                 for i,c in enumerate(corrects):
                     if c>0:
                         running_prec +=corrects[i]/selected[i]
@@ -417,6 +426,16 @@ def main():
                 if num % (100*inputs.size(0))==0:
                     print('{} L: {:.4f} p: {:.4f} r: {:.4f} F1: {:.4f} Time: {:.4f}s'.format(
                             num,average_loss,average_prec,average_recall,average_F1,t02-t01))
+            
+            class_prec=correct_class.double()/selected_class.double()*100
+            class_recall=correct_class.double()/relevant_class.double()*100
+            print(phase)
+            print('c:'+'\t'.join('{:4.0d}'.format(i) for i in range(NLABEL)))
+            #print('n:'+'\t'.join('{:4.0d}'.format(i) for i in correct_class.numpy()))
+            print('p:'+'\t'.join('{:4.0f}'.format(i) for i in class_prec.numpy()))
+            print('r:'+'\t'.join('{:4.0f}'.format(i) for i in class_recall.numpy()))
+            
+            
             if phase == 'val' and average_F1 > best_F1:
                 best_F1 = average_F1
                 #best_model_wts = copy.deepcopy(model.state_dict())
