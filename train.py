@@ -430,8 +430,8 @@ def main():
             class_prec=correct_class.double()/selected_class.double()*100
             class_recall=correct_class.double()/relevant_class.double()*100
             print(phase)
-            print('c:'+'\t'.join('{:4.0d}'.format(i) for i in range(NLABEL)))
-            #print('n:'+'\t'.join('{:4.0d}'.format(i) for i in correct_class.numpy()))
+            print('c:'+'\t'.join('{:4d}'.format(i) for i in range(NLABEL)))
+            #print('n:'+'\t'.join('{:4d}'.format(i) for i in correct_class.numpy()))
             print('p:'+'\t'.join('{:4.0f}'.format(i) for i in class_prec.numpy()))
             print('r:'+'\t'.join('{:4.0f}'.format(i) for i in class_recall.numpy()))
             
