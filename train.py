@@ -334,7 +334,8 @@ def main():
     
     pre_trained=model_zoo.load_url(model_urls['resnet34'])
     con1_weight=pre_trained['conv1.weight']
-    pre_trained['conv1.weight']=torch.cat((con1_weight,con1_weight[:,1,:,:].view(64,1,7,7)),1)
+    dim=np.random.choice(3,1)[0]
+    pre_trained['conv1.weight']=torch.cat((con1_weight,con1_weight[:,dim,:,:].view(64,1,7,7)),1)
     pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
     pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]
     '''
@@ -374,7 +375,7 @@ def main():
         criterion = FocalLoss(gamma=1,pos_weight=pos_weight)
     
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.3)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.2)
     #t00 = time.time()
     #best_F1=0.0
     for i in range(args.resume_epoch):
