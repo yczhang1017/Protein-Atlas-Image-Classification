@@ -44,6 +44,8 @@ parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
 parser.add_argument('--type', default='A',  choices=['A', 'B'], type=str,
                     help='type of the model')
+parser.add_argument('--loss', default='focal',  choices=['bce', 'bcew','focal','focalw'], type=str,
+                    help='type of loss')
 
 
 args = parser.parse_args()
@@ -175,7 +177,7 @@ custom-built SqueezeNet model
 
 import torch.utils.model_zoo as model_zoo
 from torchvision.models.resnet import model_urls,Bottleneck,BasicBlock
-import collections
+#import collections
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -286,12 +288,13 @@ def main():
     #repeat training images with rare labels
     repeat=[];pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
+        rep=int(np.power(len(ids[0])/len(ids[i]),0.5))
         repeat.append(rep)
         pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.5)/rep)
         
     repeat=np.array(repeat)
-    pos_weight=torch.tensor(pos_weight)
+    
+    
     #Divide image ids into training and evaluation parts
     image_sets={'train': set(label_dict.keys()),
                  'val':set([]) }
@@ -359,12 +362,21 @@ def main():
     if torch.cuda.is_available():
         model = model.cuda()
     
-    #criterion = FocalLoss(gamma=1,pos_weight=pos_weight)
-    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    
+    if args.loss.endswith('w'):
+        pos_weight=torch.tensor(pos_weight)
+    else:
+        pos_weight=None
+    
+    if args.loss.startswith('bce'):
+        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    elif args.loss.startswith('focal'):    
+        criterion = FocalLoss(gamma=1,pos_weight=pos_weight)
+    
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.3)
-    t00 = time.time()
-    best_F1=0.0
+    #t00 = time.time()
+    #best_F1=0.0
     for i in range(args.resume_epoch):
         scheduler.step()
     for epoch in range(args.resume_epoch,args.epochs):
@@ -380,7 +392,6 @@ def main():
             running_loss=0
             running_prec=0
             running_recall=0
-            running_F1=0
             correct_class=torch.zeros(NLABEL,dtype=torch.int64)
             selected_class=torch.zeros(NLABEL,dtype=torch.int64)
             relevant_class=torch.zeros(NLABEL,dtype=torch.int64)
@@ -429,17 +440,17 @@ def main():
             
                     class_prec=(correct_class.double()/selected_class.double()*100).cpu().numpy()
                     class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
-                    print(phase)
-                    print('c:'+''.join('{:4d}'.format(i) for i in range(NLABEL)))
-                    #print('n:'+''.join('{:4d}'.format(i) for i in correct_class.cpu().numpy()))
-                    print('p:'+''.join('{:4.0f}'.format(i) for i in class_prec))
-                    print('r:'+''.join('{:4.0f}'.format(i) for i in class_recall))
+            print(phase)
+            print('c:'+''.join('{:5d}'.format(i) for i in range(NLABEL)))
+            print('n:'+''.join('{:5d}'.format(i) for i in correct_class.cpu().numpy()))
+            print('p:'+''.join('{:5.0f}'.format(i) for i in class_prec))
+            print('r:'+''.join('{:5.0f}'.format(i) for i in class_recall))
             
             
-            if phase == 'val' and average_F1 > best_F1:
-                best_F1 = average_F1
+            if phase == 'val':
+                #best_F1 = average_F1
                 #best_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(model.state_dict(),os.path.join(args.root,args.save_folder,'out_'+str(epoch+1)+'.pth'))
+                torch.save(model.state_dict(),os.path.join(args.root,args.save_folder,'out_'+str(epoch+1)+'.pth'))
         print()
         
 if __name__ == '__main__':

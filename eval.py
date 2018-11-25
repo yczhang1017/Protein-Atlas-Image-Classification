@@ -108,10 +108,10 @@ def main():
                 print('Image {:d}/{:d} time: {:.4f}s'.format(num+1,total,dt1))
                 class_prec=(correct_class.double()/selected_class.double()*100).cpu().numpy()
                 class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
-                print('c:'+''.join('{:4d}'.format(i) for i in range(NLABEL)))
-                print('n:'+''.join('{:4d}'.format(i) for i in correct_class.cpu().numpy()))
-                print('p:'+''.join('{:4.0f}'.format(i) for i in class_prec))
-                print('r:'+''.join('{:4.0f}'.format(i) for i in class_recall))
+                print('c:'+''.join('{:5d}'.format(i) for i in range(NLABEL)))
+                print('n:'+''.join('{:5d}'.format(i) for i in correct_class.cpu().numpy()))
+                print('p:'+''.join('{:5.0f}'.format(i) for i in class_prec))
+                print('r:'+''.join('{:5.0f}'.format(i) for i in class_recall))
     f.close()
     
 if __name__ == '__main__':
