@@ -28,7 +28,7 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=1e-1, type=float,
+parser.add_argument('--lr', '--learning-rate', default=5e-2, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
@@ -44,7 +44,7 @@ parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
 parser.add_argument('--type', default='A',  choices=['A', 'B'], type=str,
                     help='type of the model')
-parser.add_argument('--loss', default='focal',  choices=['bce', 'bcew','focal','focalw'], type=str,
+parser.add_argument('--loss', default='focalw',  choices=['bce', 'bcew','focal','focalw'], type=str,
                     help='type of loss')
 
 
@@ -290,10 +290,10 @@ def main():
     for i in range(NLABEL):
         rep=int(np.power(len(ids[0])/len(ids[i]),0.5))
         repeat.append(rep)
-        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.5)/rep)
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.1))
         
     repeat=np.array(repeat)
-    
+        
     
     #Divide image ids into training and evaluation parts
     image_sets={'train': set(label_dict.keys()),
