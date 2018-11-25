@@ -316,12 +316,13 @@ def main():
             
             label_array=np.array(im_label)
             im_repeat= np.max(repeat[label_array])
-            pos[label_array]+=1
-            num_train+=1
+            
             if phase=='val':
                 image_labels[phase].append((im,im_label))
             else:
                 for i in range(im_repeat):
+                    pos[label_array]+=1
+                    num_train+=1
                     image_labels[phase].append((im,im_label))
                     
                     
