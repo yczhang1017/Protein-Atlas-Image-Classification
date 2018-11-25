@@ -44,7 +44,7 @@ parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
 parser.add_argument('--type', default='A',  choices=['A', 'B'], type=str,
                     help='type of the model')
-parser.add_argument('--loss', default='focal',  choices=['bce', 'bcew','focal','focalw'], type=str,
+parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw'], type=str,
                     help='type of loss')
 
 
@@ -290,7 +290,7 @@ def main():
     for i in range(NLABEL):
         rep=int(np.power(len(ids[0])/len(ids[i]),0.5))
         repeat.append(rep)
-        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.1))
+        pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
         
     repeat=np.array(repeat)
         
@@ -366,7 +366,7 @@ def main():
     
     if args.loss.endswith('w'):
         pos_weight=torch.tensor(pos_weight)
-        print('include loss weights')
+        print('loss weights: ',pos_weight)
     else:
         pos_weight=None
         print('without loss weights')
