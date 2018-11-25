@@ -427,13 +427,13 @@ def main():
                     print('{} L: {:.4f} p: {:.4f} r: {:.4f} F1: {:.4f} Time: {:.4f}s'.format(
                             num,average_loss,average_prec,average_recall,average_F1,t02-t01))
             
-            class_prec=(correct_class.double()/selected_class.double()*100).cpu().numpy()
-            class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
-            print(phase)
-            print('c:'+''.join('{:4d}'.format(i) for i in range(NLABEL)))
-            #print('n:'+'\t'.join('{:4d}'.format(i) for i in correct_class.numpy()))
-            print('p:'+''.join('{:4.0f}'.format(i) for i in class_prec))
-            print('r:'+''.join('{:4.0f}'.format(i) for i in class_recall))
+                    class_prec=(correct_class.double()/selected_class.double()*100).cpu().numpy()
+                    class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
+                    print(phase)
+                    print('c:'+''.join('{:4d}'.format(i) for i in range(NLABEL)))
+                    #print('n:'+'\t'.join('{:4d}'.format(i) for i in correct_class.numpy()))
+                    print('p:'+''.join('{:4.0f}'.format(i) for i in class_prec))
+                    print('r:'+''.join('{:4.0f}'.format(i) for i in class_recall))
             
             
             if phase == 'val' and average_F1 > best_F1:
