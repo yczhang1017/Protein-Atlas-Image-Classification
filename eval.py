@@ -82,6 +82,7 @@ def main():
             inputs = inputs.to(device)
             outputs = model(inputs)
             
+            targets= targets.to(device).byte()
             propose=outputs.sigmoid()>0.5
             correct_class+=torch.sum(propose*targets,0)
             selected_class+=torch.sum(propose,0)
