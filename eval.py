@@ -14,7 +14,7 @@ parser.add_argument('--root', default='./',
                     type=str, help='directory of the data')
 parser.add_argument('--batch_size', default=16, type=int,
                     help='Batch size for training')
-parser.add_argument('--workers', default=8, type=int,
+parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
@@ -75,11 +75,21 @@ def main():
     f.write('Id,Predicted\n')
     t02=time.time()
     with torch.no_grad():
+        correct_class=torch.zeros(NLABEL,dtype=torch.int64)
+        selected_class=torch.zeros(NLABEL,dtype=torch.int64)
+        relevant_class=torch.zeros(NLABEL,dtype=torch.int64)
         for inputs,targets in dataloader:
             inputs = inputs.to(device)
             outputs = model(inputs)
-            propose= (outputs.sigmoid().cpu()>0.5).numpy()
+            
+            propose=outputs.sigmoid()>0.5
+            correct_class+=torch.sum(propose*targets,0)
+            selected_class+=torch.sum(propose,0)
+            relevant_class+=torch.sum(targets,0)
+            
+            propose=propose.cpu().numpy()
             count=propose.shape[0]
+            num +=count 
             for j in range(count):
                 image_id=image_label[num][0]
                 predicts=list(propose[j,:].nonzero()[0]) 
@@ -94,6 +104,12 @@ def main():
             t02= time.time()
             dt1=(t02-t01)/count
             print('Image {:d}/{:d} time: {:.4f}s'.format(num+1,total,dt1))
+            if num % (100*inputs.size(0))==0:
+                class_prec=(correct_class.double()/selected_class.double()*100).cpu().numpy()
+                class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
+                print('c:'+''.join('{:4d}'.format(i) for i in range(NLABEL)))
+                print('p:'+''.join('{:4.0f}'.format(i) for i in class_prec))
+                print('r:'+''.join('{:4.0f}'.format(i) for i in class_recall))
     f.close()
     
 if __name__ == '__main__':
