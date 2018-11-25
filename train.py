@@ -44,7 +44,7 @@ parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
 parser.add_argument('--type', default='A',  choices=['A', 'B'], type=str,
                     help='type of the model')
-parser.add_argument('--loss', default='focalw',  choices=['bce', 'bcew','focal','focalw'], type=str,
+parser.add_argument('--loss', default='focal',  choices=['bce', 'bcew','focal','focalw'], type=str,
                     help='type of loss')
 
 
@@ -366,14 +366,19 @@ def main():
     
     if args.loss.endswith('w'):
         pos_weight=torch.tensor(pos_weight)
+        print('include loss weights')
     else:
         pos_weight=None
+        print('without loss weights')
     
     if args.loss.startswith('bce'):
         criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        print('BCEloss')
     elif args.loss.startswith('focal'):    
         criterion = FocalLoss(gamma=1,pos_weight=pos_weight)
-    
+        print('Focal Loss')
+        
+        
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.3)
     #t00 = time.time()
