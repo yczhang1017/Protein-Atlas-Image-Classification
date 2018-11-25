@@ -286,11 +286,11 @@ def main():
         for j in label:
             ids[j].append(key)
     #repeat training images with rare labels
-    repeat=[];pos_weight=[];
+    repeat=[];#pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(ids[0])/len(ids[i]),0.5))
+        rep=int(np.power(len(ids[0])/len(ids[i]),0.7))
         repeat.append(rep)
-        pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
+        #pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
         
     repeat=np.array(repeat)
         
@@ -308,12 +308,16 @@ def main():
             image_sets['train'].discard(im)
     
     image_labels={'train':[], 'val':[]}
+    pos=np.zeros(NLABEL)
+    num_train=0
     for phase in ['train','val']:
         for im in image_sets[phase]:
             im_label=label_dict[im]
             
             label_array=np.array(im_label)
             im_repeat= np.max(repeat[label_array])
+            pos[label_array]+=1
+            num_train+=1
             if phase=='val':
                 image_labels[phase].append((im,im_label))
             else:
@@ -364,8 +368,9 @@ def main():
         model = model.cuda()
     
     
+    print('train number: ',num_train)
     if args.loss.endswith('w'):
-        pos_weight=torch.tensor(pos_weight)
+        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.5))
         print('loss weights: ',pos_weight)
     else:
         pos_weight=None
