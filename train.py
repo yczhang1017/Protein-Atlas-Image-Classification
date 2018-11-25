@@ -431,7 +431,7 @@ def main():
                     class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
                     print(phase)
                     print('c:'+''.join('{:4d}'.format(i) for i in range(NLABEL)))
-                    #print('n:'+'\t'.join('{:4d}'.format(i) for i in correct_class.numpy()))
+                    #print('n:'+''.join('{:4d}'.format(i) for i in correct_class.cpu().numpy()))
                     print('p:'+''.join('{:4.0f}'.format(i) for i in class_prec))
                     print('r:'+''.join('{:4.0f}'.format(i) for i in class_recall))
             
