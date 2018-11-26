@@ -44,7 +44,7 @@ parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
 parser.add_argument('--type', default='A',  choices=['A', 'B'], type=str,
                     help='type of the model')
-parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw'], type=str,
+parser.add_argument('--loss', default='focal',  choices=['bce', 'bcew','focal','focalw'], type=str,
                     help='type of loss')
 
 
@@ -97,7 +97,7 @@ transform=dict()
 mean=[0.054813755064775954, 0.0808928726780973, 0.08367144133595689, 0.05226083561943362]
 std=[0.15201123862047256, 0.14087982537762958, 0.139965362113942, 0.10123220339551285]
 transform['train']=transforms.Compose(
-    [transforms.RandomResizedCrop(512),
+    [transforms.RandomResizedCrop(512, scale=(0.3, 1.0)),
      transforms.RandomHorizontalFlip(),
      transforms.RandomVerticalFlip(),
      transforms.RandomRotation(20),
@@ -450,9 +450,10 @@ def main():
                     print('{} L: {:.4f} p: {:.4f} r: {:.4f} F1: {:.4f} Time: {:.4f}s'.format(
                             num,average_loss,average_prec,average_recall,average_F1,t02-t01))
             
-                    class_prec=(correct_class.double()/selected_class.double()*100).cpu().numpy()
-                    class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
+            '''print precision and recall for each class'''
             print(phase)
+            class_prec=(correct_class.double()/selected_class.double()*100).cpu().numpy()
+            class_recall=(correct_class.double()/relevant_class.double()*100).cpu().numpy()
             print('c:'+''.join('{:5d}'.format(i) for i in range(NLABEL)))
             print('n:'+''.join('{:5d}'.format(i) for i in correct_class.cpu().numpy()))
             print('p:'+''.join('{:5.0f}'.format(i) for i in class_prec))
