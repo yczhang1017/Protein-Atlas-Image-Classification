@@ -290,7 +290,7 @@ def main():
     #repeat training images with rare labels
     repeat=[];#pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(ids[0])/len(ids[i]),0.7))
+        rep=int(np.power(len(ids[0])/len(ids[i]),0.5))
         repeat.append(rep)
         #pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
         
@@ -374,7 +374,7 @@ def main():
     print('repeat:',repeat)
     print('positives:',pos)
     if args.loss.endswith('w'):
-        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.2)).float().cuda()
+        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.4)).float().cuda()
         print('loss weights: ',pos_weight)
     else:
         pos_weight=None
