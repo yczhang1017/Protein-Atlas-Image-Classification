@@ -28,7 +28,7 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=5e-2, type=float,
+parser.add_argument('--lr', '--learning-rate', default=2e-2, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
@@ -290,7 +290,7 @@ def main():
     #repeat training images with rare labels
     repeat=[];#pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(ids[0])/len(ids[i]),0.7))
+        rep=int(np.power(len(ids[0])/len(ids[i]),0.5))
         repeat.append(rep)
         #pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
         
