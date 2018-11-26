@@ -44,7 +44,7 @@ parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
 parser.add_argument('--type', default='A',  choices=['A', 'B'], type=str,
                     help='type of the model')
-parser.add_argument('--loss', default='focal',  choices=['bce', 'bcew','focal','focalw'], type=str,
+parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw'], type=str,
                     help='type of loss')
 
 
@@ -97,15 +97,17 @@ transform=dict()
 mean=[0.054813755064775954, 0.0808928726780973, 0.08367144133595689, 0.05226083561943362]
 std=[0.15201123862047256, 0.14087982537762958, 0.139965362113942, 0.10123220339551285]
 transform['train']=transforms.Compose(
-    [transforms.RandomResizedCrop(512, scale=(0.3, 1.0)),
+    [transforms.RandomResizedCrop(512, scale=(0.2, 1.0)),
      transforms.RandomHorizontalFlip(),
      transforms.RandomVerticalFlip(),
      transforms.RandomRotation(20),
      transforms.ToTensor(),
-     transforms.Normalize(mean,std)])
+     transforms.Normalize(mean,std)
+     ])
 transform['val']=transforms.Compose(
     [transforms.ToTensor(),
-     transforms.Normalize(mean,std)])
+     transforms.Normalize(mean,std)
+     ])
 
 
 class ProteinDataset(torch.utils.data.Dataset):
@@ -234,7 +236,7 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        x = self.maxpool(x) #added maxpool
+        #x = self.maxpool(x) #added maxpool
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
@@ -368,10 +370,11 @@ def main():
     if torch.cuda.is_available():
         model = model.cuda()
     
-    print('repeat:',repeat)
     print('train number:',num_train)
+    print('repeat:',repeat)
+    print('positives:',pos)
     if args.loss.endswith('w'):
-        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.5)).float().cuda()
+        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.2)).float().cuda()
         print('loss weights: ',pos_weight)
     else:
         pos_weight=None
