@@ -290,7 +290,7 @@ def main():
     #repeat training images with rare labels
     repeat=[];#pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(ids[0])/len(ids[i]),0.5))
+        rep=int(np.power(len(ids[0])/len(ids[i]),0.7))
         repeat.append(rep)
         #pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
         
