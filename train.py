@@ -278,7 +278,7 @@ class Inception3(nn.Module):
         self.Mixed_7b = InceptionE(1280)
         self.Mixed_7c = InceptionE(2048)
         self.fc = nn.Linear(2048, num_classes)
-
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
                 import scipy.stats as stats
@@ -339,7 +339,7 @@ class Inception3(nn.Module):
         # 7 x 7 x 2048
         x = self.Mixed_7c(x)
         # 7 x 7 x 2048
-        x = F.AdaptiveAvgPool2d(x)
+        x = self.avgpool(x)
         # 1 x 1 x 2048
         x = F.dropout(x, training=self.training)
         # 1 x 1 x 2048
