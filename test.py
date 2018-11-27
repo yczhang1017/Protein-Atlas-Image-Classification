@@ -74,8 +74,9 @@ def main():
         for inputs in dataloader:
             inputs = inputs.to(device)
             outputs = model(inputs)
-            propose= (outputs.sigmoid().cpu()>0.5).numpy()
+            propose= (outputs.sigmoid()>0.5)
             selected_class+=torch.sum(propose,0)
+            propose=propose.cpu().numpy()
             count=propose.shape[0]
             for j in range(count):
                 image_id=images[num]
