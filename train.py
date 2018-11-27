@@ -436,9 +436,30 @@ def main():
     dataloader={x: torch.utils.data.DataLoader(dataset[x],
             batch_size=args.batch_size,shuffle=True,num_workers=args.workers,pin_memory=True)
             for x in ['train', 'val']}
+    
+    if args.model=='resnet':
+        model = ResNet(BasicBlock, [3, 4, 6, 3])
+        model_url=resnet_uls['resnet34']
+        con1_name='conv1.weight'
+    elif args.model=='inception':
+        model = Inception3()
+        model_url=inception_url['inception_v3_google']
+        con1_name='Conv2d_1a_3x3.conv.weight'
+        
+        
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
     #model =SqueezeNet(version=1.1)
+    if not args.checkpoint:
+        pre_trained=model_zoo.load_url(model_url)
+        con1_weight=pre_trained[con1_name]        
+        dim=np.random.choice(3,1)[0]
+        pre_trained[con1_name]=torch.cat((con1_weight,
+                   con1_weight[:,dim,:,:].unsqueeze_(1)),1)
+        pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
+        pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
+        model.load_state_dict(pre_trained)
+    
     '''
     pre_trained2=collections.OrderedDict()
     for _ in range(len(pre_trained)):
@@ -449,14 +470,7 @@ def main():
             k=k.replace("11","12")
             pre_trained2[k]=v
     '''     
-    if args.model=='resnet':
-        model = ResNet(BasicBlock, [3, 4, 6, 3])
-        model_url=resnet_uls['resnet34']
-        con1_name='conv1.weight'
-    elif args.model=='inception':
-        model = Inception3()
-        model_url=inception_url['inception_v3_google']
-        con1_name='Conv2d_1a_3x3.conv.weight'
+    
     
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
@@ -467,15 +481,7 @@ def main():
         weight_file=os.path.join(args.root,args.checkpoint)
         model.load_state_dict(torch.load(weight_file,
                                  map_location=lambda storage, loc: storage))
-    else:
-        pre_trained=model_zoo.load_url(model_url)
-        con1_weight=pre_trained[con1_name]        
-        dim=np.random.choice(3,1)[0]
-        pre_trained[con1_name]=torch.cat((con1_weight,
-                   con1_weight[:,dim,:,:].unsqueeze_(1)),1)
-        pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
-        pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
-        model.load_state_dict(pre_trained)
+    
         
         
     if torch.cuda.is_available():
