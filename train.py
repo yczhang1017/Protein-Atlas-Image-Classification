@@ -42,7 +42,7 @@ parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--type', default='A',  choices=['A', 'B'], type=str,
+parser.add_argument('--model', default='resnet',  choices=['resnet', 'inception'], type=str,
                     help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw'], type=str,
                     help='type of loss')
@@ -100,7 +100,7 @@ transform['train']=transforms.Compose(
     [
      transforms.RandomAffine(20,shear=20,resample=PIL.Image.BILINEAR),
      #transforms.RandomRotation(20),
-     transforms.RandomResizedCrop(512, scale=(0.2, 1.0)),
+     transforms.RandomResizedCrop(512),
      transforms.RandomHorizontalFlip(),
      transforms.RandomVerticalFlip(),
      transforms.ToTensor(),
@@ -176,11 +176,11 @@ class ProteinDataset(torch.utils.data.Dataset):
 
  
 '''
-custom-built SqueezeNet model
+Resnet
 '''
-
 import torch.utils.model_zoo as model_zoo
-from torchvision.models.resnet import model_urls,Bottleneck,BasicBlock
+from torchvision.models.resnet import model_urls as resnet_uls
+from torchvision.models.resnet import Bottleneck,BasicBlock
 #import collections
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -248,7 +248,108 @@ class ResNet(nn.Module):
         x = self.fc(x)
 
         return x
-                
+'''
+Inception 
+'''
+from torchvision.models.inception import model_urls as inception_uls
+from torchvision.models.inception import BasicConv2d,InceptionA,InceptionB,
+InceptionC,InceptionD,InceptionE,InceptionAux
+
+class Inception3(nn.Module):
+    def __init__(self, num_classes=NLABEL, aux_logits=True, transform_input=False):
+        super(Inception3, self).__init__()
+        self.aux_logits = aux_logits
+        self.transform_input = transform_input
+        self.Conv2d_1a_3x3 = BasicConv2d(4, 32, kernel_size=3, stride=2)
+        self.Conv2d_2a_3x3 = BasicConv2d(32, 32, kernel_size=3)
+        self.Conv2d_2b_3x3 = BasicConv2d(32, 64, kernel_size=3, padding=1)
+        self.Conv2d_3b_1x1 = BasicConv2d(64, 80, kernel_size=1)
+        self.Conv2d_4a_3x3 = BasicConv2d(80, 192, kernel_size=3)
+        self.Mixed_5b = InceptionA(192, pool_features=32)
+        self.Mixed_5c = InceptionA(256, pool_features=64)
+        self.Mixed_5d = InceptionA(288, pool_features=64)
+        self.Mixed_6a = InceptionB(288)
+        self.Mixed_6b = InceptionC(768, channels_7x7=128)
+        self.Mixed_6c = InceptionC(768, channels_7x7=160)
+        self.Mixed_6d = InceptionC(768, channels_7x7=160)
+        self.Mixed_6e = InceptionC(768, channels_7x7=192)
+        if aux_logits:
+            self.AuxLogits = InceptionAux(768, num_classes)
+        self.Mixed_7a = InceptionD(768)
+        self.Mixed_7b = InceptionE(1280)
+        self.Mixed_7c = InceptionE(2048)
+        self.fc = nn.Linear(2048, num_classes)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                import scipy.stats as stats
+                stddev = m.stddev if hasattr(m, 'stddev') else 0.1
+                X = stats.truncnorm(-2, 2, scale=stddev)
+                values = torch.Tensor(X.rvs(m.weight.numel()))
+                values = values.view(m.weight.size())
+                m.weight.data.copy_(values)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        if self.transform_input:
+            x_ch0 = torch.unsqueeze(x[:, 0], 1) * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
+            x_ch1 = torch.unsqueeze(x[:, 1], 1) * (0.224 / 0.5) + (0.456 - 0.5) / 0.5
+            x_ch2 = torch.unsqueeze(x[:, 2], 1) * (0.225 / 0.5) + (0.406 - 0.5) / 0.5
+            x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
+        # 299 x 299 x 3
+        x = self.Conv2d_1a_3x3(x)
+        # 149 x 149 x 32
+        x = self.Conv2d_2a_3x3(x)
+        # 147 x 147 x 32
+        x = self.Conv2d_2b_3x3(x)
+        # 147 x 147 x 64
+        x = F.max_pool2d(x, kernel_size=3, stride=2)
+        # 73 x 73 x 64
+        x = self.Conv2d_3b_1x1(x)
+        # 73 x 73 x 80
+        x = self.Conv2d_4a_3x3(x)
+        # 71 x 71 x 192
+        x = F.max_pool2d(x, kernel_size=3, stride=2)
+        # 35 x 35 x 192
+        x = self.Mixed_5b(x)
+        # 35 x 35 x 256
+        x = self.Mixed_5c(x)
+        # 35 x 35 x 288
+        x = self.Mixed_5d(x)
+        # 35 x 35 x 288
+        x = self.Mixed_6a(x)
+        # 17 x 17 x 768
+        x = self.Mixed_6b(x)
+        # 17 x 17 x 768
+        x = self.Mixed_6c(x)
+        # 17 x 17 x 768
+        x = self.Mixed_6d(x)
+        # 17 x 17 x 768
+        x = self.Mixed_6e(x)
+        # 17 x 17 x 768
+        if self.training and self.aux_logits:
+            aux = self.AuxLogits(x)
+        # 17 x 17 x 768
+        x = self.Mixed_7a(x)
+        # 8 x 8 x 1280
+        x = self.Mixed_7b(x)
+        # 8 x 8 x 2048
+        x = self.Mixed_7c(x)
+        # 8 x 8 x 2048
+        x = F.avg_pool2d(x)
+        # 1 x 1 x 2048
+        x = F.dropout(x, training=self.training)
+        # 1 x 1 x 2048
+        x = x.view(x.size(0), -1)
+        # 2048
+        x = self.fc(x)
+        # 1000 (num_classes)
+        if self.training and self.aux_logits:
+            return x, aux
+        return x
+             
 '''
 Focal loss to handle imbalance between foreground and background
 from https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/65938
@@ -339,14 +440,6 @@ def main():
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
     #model =SqueezeNet(version=1.1)
-    model = ResNet(BasicBlock, [3, 4, 6, 3])
-    
-    pre_trained=model_zoo.load_url(model_urls['resnet34'])
-    con1_weight=pre_trained['conv1.weight']
-    dim=np.random.choice(3,1)[0]
-    pre_trained['conv1.weight']=torch.cat((con1_weight,con1_weight[:,dim,:,:].view(64,1,7,7)),1)
-    pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
-    pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]
     '''
     pre_trained2=collections.OrderedDict()
     for _ in range(len(pre_trained)):
@@ -368,6 +461,20 @@ def main():
         weight_file=os.path.join(args.root,args.checkpoint)
         model.load_state_dict(torch.load(weight_file,
                                  map_location=lambda storage, loc: storage))
+    else:
+        if args.model=='resnet':
+            model = ResNet(BasicBlock, [3, 4, 6, 3])
+            pre_trained=model_zoo.load_url(resnet_uls['resnet34'])
+            con1_name='conv1.weight'
+        elif args.model=='inception':
+            model = Inception3()
+            pre_trained=model_zoo.load_url(inception_urls['inception_v3_google'])
+            con1_name='Conv2d_1a_3x3'
+        con1_weight=pre_trained[con1_name]        
+        dim=np.random.choice(3,1)[0]
+        pre_trained[con1_name]=torch.cat((con1_weight,con1_weight[:,dim,:,:].view(64,1,7,7)),1)
+        pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
+        pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
         
     if torch.cuda.is_available():
         model = model.cuda()

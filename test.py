@@ -14,7 +14,7 @@ parser.add_argument('--root', default='./',
                     type=str, help='directory of the data')
 parser.add_argument('--batch_size', default=16, type=int,
                     help='Batch size for training')
-parser.add_argument('--workers', default=8, type=int,
+parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
@@ -70,10 +70,12 @@ def main():
     f.write('Id,Predicted\n')
     t02=time.time()
     with torch.no_grad():
+        selected_class=torch.zeros(NLABEL,dtype=torch.int64)
         for inputs in dataloader:
             inputs = inputs.to(device)
             outputs = model(inputs)
             propose= (outputs.sigmoid().cpu()>0.5).numpy()
+            selected_class+=torch.sum(propose,0)
             count=propose.shape[0]
             for j in range(count):
                 image_id=images[num]
@@ -89,6 +91,8 @@ def main():
             t02= time.time()
             dt1=(t02-t01)/count
             print('Image {:d}/{:d} time: {:.4f}s'.format(num,total,dt1))
+    print('c:'+''.join('{:5d}'.format(i) for i in range(NLABEL)))
+    print('n:'+''.join('{:5d}'.format(i) for i in selected_class.cpu().numpy()))
     f.close()
     
 if __name__ == '__main__':
