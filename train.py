@@ -255,7 +255,7 @@ from torchvision.models.inception import model_urls as inception_url
 from torchvision.models.inception import BasicConv2d,InceptionA,InceptionB,InceptionC,InceptionD,InceptionE,InceptionAux
 
 class Inception3(nn.Module):
-    def __init__(self, num_classes=NLABEL, aux_logits=True, transform_input=False):
+    def __init__(self, num_classes=NLABEL, aux_logits=False, transform_input=False):
         super(Inception3, self).__init__()
         self.aux_logits = aux_logits
         self.transform_input = transform_input
@@ -460,9 +460,10 @@ def main():
                    con1_weight[:,dim,:,:].unsqueeze_(1)),1)
         pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
         pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
-        if args.model=='inception':
+        '''if args.model=='inception':
             pre_trained['AuxLogits.fc.weight']=pre_trained['AuxLogits.fc.weight'][:NLABEL,:]
             pre_trained['AuxLogits.fc.bias']=pre_trained['AuxLogits.fc.bias'][:NLABEL]
+        '''
         model.load_state_dict(pre_trained)
     
     
