@@ -297,46 +297,48 @@ class Inception3(nn.Module):
             x_ch1 = torch.unsqueeze(x[:, 1], 1) * (0.224 / 0.5) + (0.456 - 0.5) / 0.5
             x_ch2 = torch.unsqueeze(x[:, 2], 1) * (0.225 / 0.5) + (0.406 - 0.5) / 0.5
             x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
-        # 299 x 299 x 3
+        # 512 x 512 x 4
         x = self.Conv2d_1a_3x3(x)
-        # 149 x 149 x 32
+        # 255 x 255 x 32
         x = self.Conv2d_2a_3x3(x)
-        # 147 x 147 x 32
+        # 253 x 253 x 32
         x = self.Conv2d_2b_3x3(x)
-        # 147 x 147 x 64
+        # 253 x 253 x 64
         x = F.max_pool2d(x, kernel_size=3, stride=2)
-        # 73 x 73 x 64
+        # 121 x 121 x 64
         x = self.Conv2d_3b_1x1(x)
-        # 73 x 73 x 80
+        # 121 x 121 x 80
         x = self.Conv2d_4a_3x3(x)
-        # 71 x 71 x 192
+        # 119 x 119 x 192
         x = F.max_pool2d(x, kernel_size=3, stride=2)
-        # 35 x 35 x 192
+        # 59 x 59 x 192
         x = self.Mixed_5b(x)
-        # 35 x 35 x 256
+        # 59 x 59 x 256
+        x = F.max_pool2d(x, kernel_size=3, stride=2) #added maxpool
+        # 29 x 29 x 256
         x = self.Mixed_5c(x)
-        # 35 x 35 x 288
+        # 29 x 29 x 256
         x = self.Mixed_5d(x)
-        # 35 x 35 x 288
+        # 29 x 29 x 256
         x = self.Mixed_6a(x)
-        # 17 x 17 x 768
+        # 14 x 14 x 768
         x = self.Mixed_6b(x)
-        # 17 x 17 x 768
+        # 14 x 14 x 768
         x = self.Mixed_6c(x)
-        # 17 x 17 x 768
+        # 14 x 14 x 768
         x = self.Mixed_6d(x)
-        # 17 x 17 x 768
+        # 14 x 14 x 768
         x = self.Mixed_6e(x)
-        # 17 x 17 x 768
+        # 14 x 14 x 768
         if self.training and self.aux_logits:
             aux = self.AuxLogits(x)
-        # 17 x 17 x 768
+        # 14 x 14 x 768
         x = self.Mixed_7a(x)
-        # 8 x 8 x 1280
+        # 7 x 7 x 1280
         x = self.Mixed_7b(x)
-        # 8 x 8 x 2048
+        # 7 x 7 x 2048
         x = self.Mixed_7c(x)
-        # 8 x 8 x 2048
+        # 7 x 7 x 2048
         x = F.avg_pool2d(x)
         # 1 x 1 x 2048
         x = F.dropout(x, training=self.training)
@@ -458,7 +460,11 @@ def main():
                    con1_weight[:,dim,:,:].unsqueeze_(1)),1)
         pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
         pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
+        if args.model=='inception':
+            pre_trained['AuxLogits.fc.weight']=pre_trained['AuxLogits.fc.weight'][:NLABEL,:]
+            pre_trained['AuxLogits.fc.bias']=pre_trained['AuxLogits.fc.bias'][:NLABEL]
         model.load_state_dict(pre_trained)
+    
     
     '''
     pre_trained2=collections.OrderedDict()
