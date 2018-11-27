@@ -461,7 +461,7 @@ def main():
         pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
         pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
         if args.model=='inception':
-            for key in pre_trained.keys():
+            for key in list(pre_trained.keys()):
                 if key.startswith('Aux'):
                     del pre_trained[key]
         model.load_state_dict(pre_trained)
