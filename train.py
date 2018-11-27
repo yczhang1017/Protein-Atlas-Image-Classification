@@ -456,7 +456,7 @@ def main():
     elif args.model=='inception':
         model = Inception3()
         model_url=inception_url['inception_v3_google']
-        con1_name='Conv2d_1a_3x3'
+        con1_name='Conv2d_1a_3x3.conv.weight'
     
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
