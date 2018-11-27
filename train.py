@@ -471,7 +471,8 @@ def main():
         pre_trained=model_zoo.load_url(model_url)
         con1_weight=pre_trained[con1_name]        
         dim=np.random.choice(3,1)[0]
-        pre_trained[con1_name]=torch.cat((con1_weight,con1_weight[:,dim,:,:].view(64,1,7,7)),1)
+        pre_trained[con1_name]=torch.cat((con1_weight,
+                   con1_weight[:,dim,:,:].unsqueeze_(2)),1)
         pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
         pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
         model.load_state_dict(pre_trained)
