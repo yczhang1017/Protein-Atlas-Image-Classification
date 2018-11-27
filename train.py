@@ -97,10 +97,12 @@ transform=dict()
 mean=[0.054813755064775954, 0.0808928726780973, 0.08367144133595689, 0.05226083561943362]
 std=[0.15201123862047256, 0.14087982537762958, 0.139965362113942, 0.10123220339551285]
 transform['train']=transforms.Compose(
-    [transforms.RandomResizedCrop(512),
+    [
+     transforms.RandomAffine(20,scale=(1,6),shear=20,resample=PIL.Image.BILINEAR),
+     #transforms.RandomResizedCrop(512),
      transforms.RandomHorizontalFlip(),
      transforms.RandomVerticalFlip(),
-     transforms.RandomRotation(20),
+     #transforms.RandomRotation(20),
      transforms.ToTensor(),
      transforms.Normalize(mean,std)
      ])
