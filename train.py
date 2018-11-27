@@ -252,8 +252,7 @@ class ResNet(nn.Module):
 Inception 
 '''
 from torchvision.models.inception import model_urls as inception_uls
-from torchvision.models.inception import BasicConv2d,InceptionA,InceptionB,
-InceptionC,InceptionD,InceptionE,InceptionAux
+from torchvision.models.inception import BasicConv2d,InceptionA,InceptionB,InceptionC,InceptionD,InceptionE,InceptionAux
 
 class Inception3(nn.Module):
     def __init__(self, num_classes=NLABEL, aux_logits=True, transform_input=False):
