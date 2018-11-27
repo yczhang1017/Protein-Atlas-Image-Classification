@@ -251,7 +251,7 @@ class ResNet(nn.Module):
 '''
 Inception 
 '''
-from torchvision.models.inception import model_urls as inception_uls
+from torchvision.models.inception import model_urls as inception_url
 from torchvision.models.inception import BasicConv2d,InceptionA,InceptionB,InceptionC,InceptionD,InceptionE,InceptionAux
 
 class Inception3(nn.Module):
@@ -449,7 +449,14 @@ def main():
             k=k.replace("11","12")
             pre_trained2[k]=v
     '''     
-    model.load_state_dict(pre_trained)
+    if args.model=='resnet':
+        model = ResNet(BasicBlock, [3, 4, 6, 3])
+        model_url=resnet_uls['resnet34']
+        con1_name='conv1.weight'
+    elif args.model=='inception':
+        model = Inception3()
+        model_url=inception_url['inception_v3_google']
+        con1_name='Conv2d_1a_3x3'
     
     if torch.cuda.is_available():
         model=nn.DataParallel(model)
@@ -461,19 +468,14 @@ def main():
         model.load_state_dict(torch.load(weight_file,
                                  map_location=lambda storage, loc: storage))
     else:
-        if args.model=='resnet':
-            model = ResNet(BasicBlock, [3, 4, 6, 3])
-            pre_trained=model_zoo.load_url(resnet_uls['resnet34'])
-            con1_name='conv1.weight'
-        elif args.model=='inception':
-            model = Inception3()
-            pre_trained=model_zoo.load_url(inception_urls['inception_v3_google'])
-            con1_name='Conv2d_1a_3x3'
+        pre_trained=model_zoo.load_url(model_url)
         con1_weight=pre_trained[con1_name]        
         dim=np.random.choice(3,1)[0]
         pre_trained[con1_name]=torch.cat((con1_weight,con1_weight[:,dim,:,:].view(64,1,7,7)),1)
         pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
         pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
+        model.load_state_dict(pre_trained)
+        
         
     if torch.cuda.is_available():
         model = model.cuda()
