@@ -238,7 +238,7 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        #x = self.maxpool(x) #added maxpool
+        x = self.maxpool(x) #added maxpool
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
@@ -382,7 +382,8 @@ class FocalLoss(nn.Module):
 class F1Loss(nn.Module):
     def __init__(self):
         super(F1Loss, self).__init__()
-    def forward(self,y_pred,y_true):    
+    def forward(self,output,y_true):
+        y_pred=output.sigmoid()
         tp = torch.sum(y_true*y_pred,0)
         fp = torch.sum(y_pred,0)
         fn = torch.sum(y_true,0)
