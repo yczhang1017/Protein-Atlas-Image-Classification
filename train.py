@@ -34,7 +34,7 @@ parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
 parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
-parser.add_argument('--weight_decay', default=5e-4, type=float,
+parser.add_argument('--weight_decay', default=5e-3, type=float,
                     help='Weight decay')
 parser.add_argument('--step_size', default=4, type=int,
                     help='Number of steps for every learning rate decay')
