@@ -518,7 +518,7 @@ def main():
     print('repeat:',repeat)
     print('positives:',pos)
     if args.loss.endswith('w'):
-        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.2)).float().cuda()
+        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.3)).float().cuda()
         print('loss weights: ',pos_weight)
     else:
         pos_weight=None
