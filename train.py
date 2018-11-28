@@ -384,6 +384,7 @@ class F1Loss(nn.Module):
         super(F1Loss, self).__init__()
     def forward(self,output,y_true):
         y_pred=output.sigmoid()
+        y_pred=torch.tanh(10*(y_pred-0.5))/2+0.5
         tp = torch.sum(y_true*y_pred,0)
         fp = torch.sum(y_pred,0)
         fn = torch.sum(y_true,0)
