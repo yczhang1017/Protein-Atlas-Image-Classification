@@ -390,6 +390,7 @@ class F1Loss(nn.Module):
         p = tp / (fp + epsilon)
         r = tp / (fn + epsilon)
         f1 = 2*p*r / (p+r+epsilon)
+        f1[f1!=f1]=0 #set NaN to 0
         return 1 - torch.mean(f1)    
     
 def main():
