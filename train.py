@@ -28,7 +28,7 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=2e-2, type=float,
+parser.add_argument('--lr', '--learning-rate', default=4e-3, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
