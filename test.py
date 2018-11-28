@@ -68,7 +68,7 @@ def main():
     print('Finished loading model!')
     total=len(images)
     num=0
-    output_file=os.path.join(args.root,args.results,'test_'+args.type+'.csv')
+    output_file=os.path.join(args.root,args.results,'test_'+args.model+'.csv')
     f=open( output_file , mode='w+')
     f.write('Id,Predicted\n')
     t02=time.time()
