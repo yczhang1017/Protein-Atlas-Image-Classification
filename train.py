@@ -408,7 +408,7 @@ def main():
     #repeat training images with rare labels
     repeat=[];#pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(ids[0])/len(ids[i]),0.5))
+        rep=int(np.power(len(ids[0])/len(ids[i]),0.25))
         repeat.append(rep)
         #pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
         
@@ -498,7 +498,8 @@ def main():
         cudnn.benchmark = True
         
     if args.checkpoint:
-        print('Resuming training, loading {}...'.format(args.checkpoint))
+        print('Resuming training from epoch {}, loading {}...'
+              .format(args.resume_epoch,args.checkpoint))
         weight_file=os.path.join(args.root,args.checkpoint)
         model.load_state_dict(torch.load(weight_file,
                                  map_location=lambda storage, loc: storage))
