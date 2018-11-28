@@ -44,7 +44,7 @@ parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
 parser.add_argument('--model', default='resnet',  choices=['resnet', 'inception'], type=str,
                     help='type of the model')
-parser.add_argument('--loss', default='F1',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
+parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
 
 
