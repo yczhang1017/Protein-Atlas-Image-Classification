@@ -1,4 +1,4 @@
-from train import ProteinDataset,ResNet,BasicBlock,inception3,NAME,NLABEL,transform
+from train import ProteinDataset,ResNet,BasicBlock,Inception3,NAME,NLABEL,transform
 import os
 import numpy as np
 import pandas as pd
