@@ -350,7 +350,7 @@ class Inception3(nn.Module):
         if self.training and self.aux_logits:
             return x, aux
         return x
-             
+
 '''
 Focal loss to handle imbalance between foreground and background
 from https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/65938

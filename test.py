@@ -20,7 +20,7 @@ parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
 parser.add_argument('--checkpoint', default='res34_1/out_24.pth', type=str,
                     help='Trained state_dict file path to open')
-parser.add_argument('--type', default='res34', type=str,
+parser.add_argument('--model', default='resnet', type=str,
                     help='type of the model')
 
 args = parser.parse_args()
@@ -46,7 +46,10 @@ def main():
                 batch_size=args.batch_size,shuffle=False,num_workers=args.workers,pin_memory=True)
     
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
-    model = ResNet(BasicBlock, [3, 4, 6, 3])
+    if args.model=='resnet':
+        model = ResNet(BasicBlock, [3, 4, 6, 3])
+    elif args.model=='inception':
+        model = Inception3()
     
     if torch.cuda.is_available():
             model=nn.DataParallel(model)
