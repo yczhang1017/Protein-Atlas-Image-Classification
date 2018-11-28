@@ -44,7 +44,7 @@ parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
 parser.add_argument('--model', default='resnet',  choices=['resnet', 'inception'], type=str,
                     help='type of the model')
-parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw'], type=str,
+parser.add_argument('--loss', default='F1',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
 
 
@@ -378,7 +378,19 @@ class FocalLoss(nn.Module):
             return torch.mean(F_loss)
         else:
             return F_loss
-    
+
+class F1Loss(nn.Module):
+    def __init__(self):
+        super(F1Loss, self).__init__()
+    def forward(self,y_pred,y_true):    
+        tp = torch.sum(y_true*y_pred,0)
+        fp = torch.sum(y_pred,0)
+        fn = torch.sum(y_true,0)
+        epsilon=1e-8
+        p = tp / (fp + epsilon)
+        r = tp / (fn + epsilon)
+        f1 = 2*p*r / (p+r+epsilon)
+        return 1 - torch.mean(f1)    
     
 def main():
     csv_file=os.path.join(args.root,'train.csv')
@@ -504,7 +516,10 @@ def main():
         pos_weight=None
         print('without loss weights')
     
-    if args.loss.startswith('bce'):
+    if args.loss=='F1':
+        criterion = F1Loss()
+        print('F1 loss')
+    elif args.loss.startswith('bce'):
         criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         print('BCEloss')
     elif args.loss.startswith('focal'):    
