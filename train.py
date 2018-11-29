@@ -34,7 +34,7 @@ parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
 parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
-parser.add_argument('--weight_decay', default=2e-3, type=float,
+parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
 parser.add_argument('--step_size', default=4, type=int,
                     help='Number of steps for every learning rate decay')
@@ -240,7 +240,7 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        #x = self.maxpool(x) #added maxpool
+        x = self.maxpool(x) #added maxpool
         x = self.layer2(x)
         x = self.layer3(x)
         #x = self.dropout2d(x) #added dropout
@@ -248,7 +248,7 @@ class ResNet(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        x = self.dropout(x) #added dropout
+        #x = self.dropout(x) #added dropout
         x = self.fc(x)
 
         return x
@@ -413,7 +413,8 @@ def main():
     #repeat training images with rare labels
     repeat=[];#pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
+        rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
+        #rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
         repeat.append(rep)
         #pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
         
@@ -518,7 +519,7 @@ def main():
     print('repeat:',repeat)
     print('positives:',pos)
     if args.loss.endswith('w'):
-        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.3)).float().cuda()
+        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.5)).float().cuda()
         print('loss weights: ',pos_weight)
     else:
         pos_weight=None
