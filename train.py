@@ -417,7 +417,7 @@ def main():
         #rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
         repeat.append(rep)
         pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.5))
-        
+    pos_weight=torch.tensor(pos_weight)    
     repeat=np.array(repeat)
         
     
@@ -519,7 +519,7 @@ def main():
     print('repeat:',repeat)
     print('positives:',pos)
     if args.loss.endswith('w'):
-        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.5)).float().cuda()
+        #pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.5)).float().cuda()
         print('loss weights: ',pos_weight)
     else:
         pos_weight=None
