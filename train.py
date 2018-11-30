@@ -411,12 +411,12 @@ def main():
         for j in label:
             ids[j].append(key)
     #repeat training images with rare labels
-    repeat=[];#pos_weight=[];
+    repeat=[];pos_weight=[];
     for i in range(NLABEL):
         rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
         #rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
         repeat.append(rep)
-        #pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.3))
+        pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.5))
         
     repeat=np.array(repeat)
         
