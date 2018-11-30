@@ -416,7 +416,7 @@ def main():
         rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
         #rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
         repeat.append(rep)
-        pos_weight.append(np.power((len(label_dict)-rep*len(ids[i]))/len(ids[i])/rep,0.5))
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.5)/rep)
     pos_weight=torch.tensor(pos_weight)    
     repeat=np.array(repeat)
         
