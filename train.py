@@ -22,13 +22,13 @@ parser = argparse.ArgumentParser(
     description='Protain Alta Image Classification')
 parser.add_argument('--root', default='./',
                     type=str, help='directory of the data')
-parser.add_argument('--batch_size', default=16, type=int,
+parser.add_argument('--batch_size', default=24, type=int,
                     help='Batch size for training')
 parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=4e-3, type=float,
+parser.add_argument('--lr', '--learning-rate', default=4e-2, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
