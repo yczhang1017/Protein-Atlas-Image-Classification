@@ -1,4 +1,4 @@
-from train import ProteinDataset,ResNet,BasicBlock,Inception3,NAME,NLABEL,transform
+from train import ProteinDataset,ResNet,BasicBlock,Bottleneck,Inception3,NAME,NLABEL,transform
 import os
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
 parser.add_argument('--checkpoint', default='res34_1/out_24.pth', type=str,
                     help='Trained state_dict file path to open')
-parser.add_argument('--model', default='resnet', type=str,
+parser.add_argument('--model', default='res50', choices=['res34','res50','inception'], type=str,
                     help='type of the model')
 
 args = parser.parse_args()
@@ -48,6 +48,8 @@ def main():
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
     if args.model=='resnet':
         model = ResNet(BasicBlock, [3, 4, 6, 3])
+    if args.model=='resnet':
+        model = ResNet(Bottleneck, [3, 4, 6, 3])
     elif args.model=='inception':
         model = Inception3()
     
