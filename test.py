@@ -46,9 +46,9 @@ def main():
                 batch_size=args.batch_size,shuffle=False,num_workers=args.workers,pin_memory=True)
     
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
-    if args.model=='resnet':
+    if args.model=='res34':
         model = ResNet(BasicBlock, [3, 4, 6, 3])
-    if args.model=='resnet':
+    if args.model=='res50':
         model = ResNet(Bottleneck, [3, 4, 6, 3])
     elif args.model=='inception':
         model = Inception3()
