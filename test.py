@@ -1,4 +1,4 @@
-from train import ProteinDataset,ResNet,BasicBlock,Bottleneck,Inception3,NAME,NLABEL,transform
+from train import ProteinDataset,NAME,NLABEL,transform,CNN_models
 import os
 import numpy as np
 import pandas as pd
@@ -46,13 +46,8 @@ def main():
                 batch_size=args.batch_size,shuffle=False,num_workers=args.workers,pin_memory=True)
     
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
-    if args.model=='res34':
-        model = ResNet(BasicBlock, [3, 4, 6, 3])
-    if args.model=='res50':
-        model = ResNet(Bottleneck, [3, 4, 6, 3])
-    elif args.model=='inception':
-        model = Inception3()
-    
+    model,_,_ = CNN_models(args.model) 
+
     if torch.cuda.is_available():
             model=nn.DataParallel(model)
             cudnn.benchmark = True

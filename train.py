@@ -8,12 +8,18 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import torchvision
 from torchvision.transforms import transforms
 #from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
 import time
 import argparse
+
+import torch.utils.model_zoo as model_zoo
+from torchvision.models.resnet import model_urls as resnet_uls
+from torchvision.models.resnet import BasicBlock,Bottleneck
+from torchvision.models.inception import model_urls as inception_url
+from CNNs import ResNet,SENet,Inception3,XBottleneck
+
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -36,14 +42,14 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
-parser.add_argument('--step_size', default=4, type=int,
+parser.add_argument('--step_size', default=8, type=int,
                     help='Number of steps for every learning rate decay')
 parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--model', default='res50',  choices=['res34','res50','inception'], type=str,
-                    help='type of the model')
+parser.add_argument('--model', default='senet',  choices=['res34','res50','inception','senet',], 
+                    type=str, help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
 parser.add_argument('--pretrain', default=True, type=str2bool,
@@ -176,223 +182,6 @@ class ProteinDataset(torch.utils.data.Dataset):
         return len(self.image_labels)
 
  
-'''
-Resnet
-'''
-import torch.utils.model_zoo as model_zoo
-from torchvision.models.resnet import model_urls as resnet_uls
-from torchvision.models.resnet import Bottleneck,BasicBlock
-#import collections
-class RiR(nn.Module):
-    expansion = 1
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(BasicBlock, self).__init__()
-        self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.downsample = downsample
-        self.stride = stride
-    def half(self,x):
-        xs=x.split(2,dim=0)
-        xs[1].zero_()
-        residual=torch.cat(xs,dim=0)
-        xs=residual.split(2,dim=1)
-        xs[1].zero_()
-        residual=torch.cat(xs,dim=1)
-        
-        
-    def forward(self, x):
-        residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
-        out = self.relu(out)
-
-        return out
-    
-def conv3x3(in_planes, out_planes, stride=1):
-    """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
-
-
-def conv1x1(in_planes, out_planes, stride=1):
-    """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
-
-class ResNet(nn.Module):
-    def __init__(self, block, layers, num_classes=NLABEL):
-        super(ResNet, self).__init__()
-        self.inplanes = 64
-        self.conv1 = nn.Conv2d(4, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        #self.dropout2d = nn.Dropout2d()
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(p=0.2)
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
-        self.sigmoid=nn.Sigmoid()
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-
-    def _make_layer(self, block, planes, blocks, stride=1):
-        downsample = None
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride),
-                nn.BatchNorm2d(planes * block.expansion),
-            )
-
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
-        self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
-
-        return nn.Sequential(*layers)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-
-        x = self.layer1(x)
-        x = self.maxpool(x) #added maxpool
-        x = self.layer2(x)
-        x = self.layer3(x)
-        #x = self.dropout2d(x) #added dropout
-        x = self.layer4(x)
-
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        #x = self.dropout(x) #added dropout
-        x = self.fc(x)
-
-        return x
-'''
-Inception 
-'''
-from torchvision.models.inception import model_urls as inception_url
-from torchvision.models.inception import BasicConv2d,InceptionA,InceptionB,InceptionC,InceptionD,InceptionE,InceptionAux
-
-class Inception3(nn.Module):
-    def __init__(self, num_classes=NLABEL, aux_logits=False, transform_input=False):
-        super(Inception3, self).__init__()
-        self.aux_logits = aux_logits
-        self.transform_input = transform_input
-        self.Conv2d_1a_3x3 = BasicConv2d(4, 32, kernel_size=3, stride=2)
-        self.Conv2d_2a_3x3 = BasicConv2d(32, 32, kernel_size=3)
-        self.Conv2d_2b_3x3 = BasicConv2d(32, 64, kernel_size=3, padding=1)
-        self.Conv2d_3b_1x1 = BasicConv2d(64, 80, kernel_size=1)
-        self.Conv2d_4a_3x3 = BasicConv2d(80, 192, kernel_size=3)
-        self.Mixed_5b = InceptionA(192, pool_features=32)
-        self.Mixed_5c = InceptionA(256, pool_features=64)
-        self.Mixed_5d = InceptionA(288, pool_features=64)
-        self.Mixed_6a = InceptionB(288)
-        self.Mixed_6b = InceptionC(768, channels_7x7=128)
-        self.Mixed_6c = InceptionC(768, channels_7x7=160)
-        self.Mixed_6d = InceptionC(768, channels_7x7=160)
-        self.Mixed_6e = InceptionC(768, channels_7x7=192)
-        if aux_logits:
-            self.AuxLogits = InceptionAux(768, num_classes)
-        self.Mixed_7a = InceptionD(768)
-        self.Mixed_7b = InceptionE(1280)
-        self.Mixed_7c = InceptionE(2048)
-        self.fc = nn.Linear(2048, num_classes)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                import scipy.stats as stats
-                stddev = m.stddev if hasattr(m, 'stddev') else 0.1
-                X = stats.truncnorm(-2, 2, scale=stddev)
-                values = torch.Tensor(X.rvs(m.weight.numel()))
-                values = values.view(m.weight.size())
-                m.weight.data.copy_(values)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-
-    def forward(self, x):
-        if self.transform_input:
-            x_ch0 = torch.unsqueeze(x[:, 0], 1) * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
-            x_ch1 = torch.unsqueeze(x[:, 1], 1) * (0.224 / 0.5) + (0.456 - 0.5) / 0.5
-            x_ch2 = torch.unsqueeze(x[:, 2], 1) * (0.225 / 0.5) + (0.406 - 0.5) / 0.5
-            x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
-        # 512 x 512 x 4
-        x = self.Conv2d_1a_3x3(x)
-        # 255 x 255 x 32
-        x = self.Conv2d_2a_3x3(x)
-        # 253 x 253 x 32
-        x = self.Conv2d_2b_3x3(x)
-        # 253 x 253 x 64
-        x = F.max_pool2d(x, kernel_size=3, stride=2)
-        # 121 x 121 x 64
-        x = self.Conv2d_3b_1x1(x)
-        # 121 x 121 x 80
-        x = self.Conv2d_4a_3x3(x)
-        # 119 x 119 x 192
-        x = F.max_pool2d(x, kernel_size=3, stride=2)
-        # 59 x 59 x 192
-        x = self.Mixed_5b(x)
-        # 59 x 59 x 256
-        x = F.max_pool2d(x, kernel_size=3, stride=2) #added maxpool
-        # 29 x 29 x 256
-        x = self.Mixed_5c(x)
-        # 29 x 29 x 256
-        x = self.Mixed_5d(x)
-        # 29 x 29 x 256
-        x = self.Mixed_6a(x)
-        # 14 x 14 x 768
-        x = self.Mixed_6b(x)
-        # 14 x 14 x 768
-        x = self.Mixed_6c(x)
-        # 14 x 14 x 768
-        x = self.Mixed_6d(x)
-        # 14 x 14 x 768
-        x = self.Mixed_6e(x)
-        # 14 x 14 x 768
-        if self.training and self.aux_logits:
-            aux = self.AuxLogits(x)
-        # 14 x 14 x 768
-        x = self.Mixed_7a(x)
-        # 7 x 7 x 1280
-        x = self.Mixed_7b(x)
-        # 7 x 7 x 2048
-        x = self.Mixed_7c(x)
-        # 7 x 7 x 2048
-        x = self.avgpool(x)
-        # 1 x 1 x 2048
-        x = F.dropout(x, training=self.training)
-        # 1 x 1 x 2048
-        x = x.view(x.size(0), -1)
-        # 2048
-        x = self.fc(x)
-        # 1000 (num_classes)
-        if self.training and self.aux_logits:
-            return x, aux
-        return x
 
 '''
 Focal loss to handle imbalance between foreground and background
@@ -437,7 +226,25 @@ class F1Loss(nn.Module):
         f1 = 2*p*r / (p+r+epsilon)
         f1[f1!=f1]=0 #set NaN to 0
         return 1 - torch.mean(f1)    
-    
+
+def CNN_models(model_type):
+    model_url=None; con1_name=None
+    if model_type=='res34':
+        model = ResNet(BasicBlock, [3, 4, 6, 3])
+        model_url=resnet_uls['resnet34']
+        con1_name='conv1.weight'
+    elif model_type=='res50':
+        model = ResNet(Bottleneck, [3, 4, 6, 3])
+        model_url=resnet_uls['resnet50']
+        con1_name='conv1.weight'
+    elif model_type=='senet':
+        model = SENet(XBottleneck, [3, 4, 6, 3])
+    elif model_type=='inception':
+        model = Inception3()
+        model_url=inception_url['inception_v3_google']
+        con1_name='Conv2d_1a_3x3.conv.weight'
+    return (model,model_url,con1_name)
+ 
 def main():
     csv_file=os.path.join(args.root,'train.csv')
     label_dict=pd.read_csv(csv_file, index_col=0, squeeze=True).to_dict()
@@ -498,20 +305,8 @@ def main():
             batch_size=args.batch_size,shuffle=True,num_workers=args.workers,pin_memory=True)
             for x in ['train', 'val']}
     
-    if args.model=='res34':
-        model = ResNet(BasicBlock, [3, 4, 6, 3])
-        model_url=resnet_uls['resnet34']
-        con1_name='conv1.weight'
-    elif args.model=='res50':
-        model = ResNet(Bottleneck, [3, 4, 6, 3])
-        model_url=resnet_uls['resnet50']
-        con1_name='conv1.weight'
-    elif args.model=='inception':
-        model = Inception3()
-        model_url=inception_url['inception_v3_google']
-        con1_name='Conv2d_1a_3x3.conv.weight'
         
-        
+    model,model_url,con1_name = CNN_models(args.model)    
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
     #model =SqueezeNet(version=1.1)
@@ -528,7 +323,7 @@ def main():
                     if key.startswith('Aux'):
                         del pre_trained[key]
             model.load_state_dict(pre_trained)
-            
+            print('Using pretrained weights')
     
     
     '''
@@ -581,7 +376,7 @@ def main():
         
         
     optimizer = optim.SGD(model.parameters(),lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.3)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.1)
     #t00 = time.time()
     #best_F1=0.0
     for i in range(args.resume_epoch):
