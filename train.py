@@ -307,6 +307,7 @@ def main():
     
         
     model,model_url,con1_name = CNN_models(args.model)    
+    print(model)
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
     #model =SqueezeNet(version=1.1)
