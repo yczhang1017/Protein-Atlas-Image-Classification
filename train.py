@@ -42,7 +42,7 @@ parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--model', default='resnet',  choices=['resnet', 'inception'], type=str,
+parser.add_argument('--model', default='res50',  choices=['res34','res50','inception'], type=str,
                     help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
@@ -207,7 +207,7 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout()
+        self.dropout = nn.Dropout(p=0.2)
         self.fc = nn.Linear(512 * block.expansion, num_classes)
         self.sigmoid=nn.Sigmoid()
         for m in self.modules():
@@ -248,7 +248,7 @@ class ResNet(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        #x = self.dropout(x) #added dropout
+        x = self.dropout(x) #added dropout
         x = self.fc(x)
 
         return x
@@ -413,10 +413,10 @@ def main():
     #repeat training images with rare labels
     repeat=[];pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
+        rep=int(np.power(len(label_dict)/len(ids[i]),0.3))
         #rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
         repeat.append(rep)
-        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.5)/rep)
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.6)/rep)
     pos_weight=torch.tensor(pos_weight)    
     repeat=np.array(repeat)
         
@@ -459,9 +459,13 @@ def main():
             batch_size=args.batch_size,shuffle=True,num_workers=args.workers,pin_memory=True)
             for x in ['train', 'val']}
     
-    if args.model=='resnet':
+    if args.model=='res34':
         model = ResNet(BasicBlock, [3, 4, 6, 3])
         model_url=resnet_uls['resnet34']
+        con1_name='conv1.weight'
+    elif args.model=='res50':
+        model = ResNet(Bottleneck, [3, 4, 6, 3])
+        model_url=resnet_uls['resnet50']
         con1_name='conv1.weight'
     elif args.model=='inception':
         model = Inception3()
