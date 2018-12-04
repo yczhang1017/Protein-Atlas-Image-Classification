@@ -46,7 +46,8 @@ parser.add_argument('--model', default='res50',  choices=['res34','res50','incep
                     help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
-
+parser.add_argument('--pretrain', default=True, type=str2bool,
+                    help='Use pretrained weights')
 
 args = parser.parse_args()
 
@@ -100,7 +101,7 @@ transform['train']=transforms.Compose(
     [
      transforms.RandomAffine(20,shear=20,resample=PIL.Image.BILINEAR),
      #transforms.RandomRotation(20),
-     transforms.RandomResizedCrop(512),
+     transforms.RandomResizedCrop(scale=(0.5,1),512),
      transforms.RandomHorizontalFlip(),
      transforms.RandomVerticalFlip(),
      transforms.ToTensor(),
@@ -182,6 +183,44 @@ import torch.utils.model_zoo as model_zoo
 from torchvision.models.resnet import model_urls as resnet_uls
 from torchvision.models.resnet import Bottleneck,BasicBlock
 #import collections
+class RiR(nn.Module):
+    expansion = 1
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(BasicBlock, self).__init__()
+        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.downsample = downsample
+        self.stride = stride
+    def half(self,x):
+        xs=x.split(2,dim=0)
+        xs[1].zero_()
+        residual=torch.cat(xs,dim=0)
+        xs=residual.split(2,dim=1)
+        xs[1].zero_()
+        residual=torch.cat(xs,dim=1)
+        
+        
+    def forward(self, x):
+        residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
+    
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -476,19 +515,20 @@ def main():
     #dataset_sizes={x: len(dataset[x]) for x in ['train', 'val']}
     #model = VGG(make_layers(cfg[args.type], batch_norm=True))
     #model =SqueezeNet(version=1.1)
-    if not args.checkpoint:
-        pre_trained=model_zoo.load_url(model_url)
-        con1_weight=pre_trained[con1_name]        
-        dim=np.random.choice(3,1)[0]
-        pre_trained[con1_name]=torch.cat((con1_weight,
-                   con1_weight[:,dim,:,:].unsqueeze_(1)),1)
-        pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
-        pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
-        if args.model=='inception':
-            for key in list(pre_trained.keys()):
-                if key.startswith('Aux'):
-                    del pre_trained[key]
-        model.load_state_dict(pre_trained)
+    if (not args.checkpoint) and args.pretrain:
+            pre_trained=model_zoo.load_url(model_url)
+            con1_weight=pre_trained[con1_name]        
+            dim=np.random.choice(3,1)[0]
+            pre_trained[con1_name]=torch.cat((con1_weight,
+                       con1_weight[:,dim,:,:].unsqueeze_(1)),1)
+            pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
+            pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
+            if args.model=='inception':
+                for key in list(pre_trained.keys()):
+                    if key.startswith('Aux'):
+                        del pre_trained[key]
+            model.load_state_dict(pre_trained)
+            
     
     
     '''
