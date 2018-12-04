@@ -101,7 +101,7 @@ transform['train']=transforms.Compose(
     [
      transforms.RandomAffine(20,shear=20,resample=PIL.Image.BILINEAR),
      #transforms.RandomRotation(20),
-     transforms.RandomResizedCrop(scale=(0.5,1),512),
+     transforms.RandomResizedCrop(512,scale=(0.5,1)),
      transforms.RandomHorizontalFlip(),
      transforms.RandomVerticalFlip(),
      transforms.ToTensor(),
