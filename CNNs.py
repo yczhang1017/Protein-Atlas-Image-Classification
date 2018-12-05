@@ -216,7 +216,7 @@ class XBottleneck(nn.Module):
         self.downsample = downsample
         self.stride = stride
         self.SE = SE
-        self.SElayer = SELayer(planes2, self.reduction)
+        self.SELayer = SELayer(planes2, self.reduction)
     def forward(self, x):
         residual = x
 
