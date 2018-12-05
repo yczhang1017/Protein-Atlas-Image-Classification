@@ -257,11 +257,9 @@ class SENet(nn.Module):
                 nn.BatchNorm2d(2*self.inplanes),
                 nn.ReLU(inplace=True)
         )
-        self.inplanes= 2*self.inplanes
-        
+        self.inplanes= 128
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 128, layers[0])
-        #self.dropout2d = nn.Dropout2d()
         self.layer2 = self._make_layer(block, 256, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 512, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 1024, layers[3], stride=2)
@@ -280,7 +278,7 @@ class SENet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                conv3x3(self.inplanes, planes * block.expansion, stride), #SENet modification
+                conv3x3(self.inplanes, planes * block.expansion, stride, groups=32), #SENet modification
                 nn.BatchNorm2d(planes * block.expansion),
             )
         layers = []
