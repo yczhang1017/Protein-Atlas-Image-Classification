@@ -1,23 +1,21 @@
-from train import NLABEL
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
 import torchvision
-
-
+NLABEL=28
 '''
 Resnet
 '''
-def conv3x3(in_planes, out_planes, stride=1):
+def conv3x3(in_planes, out_planes, stride=1, groups=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+                     padding=1, groups=groups, bias=False)
 
 
-def conv1x1(in_planes, out_planes, stride=1):
+def conv1x1(in_planes, out_planes, stride=1, groups=1):
     """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride,
+                     groups=groups, bias=False)
 
 class ResNet(nn.Module):
     def __init__(self, block, layers, num_classes=NLABEL):
@@ -217,7 +215,8 @@ class XBottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
-        self.se = SELayer(planes2, self.reduction)
+        self.SE = SE
+        self.SElayer = SELayer(planes2, self.reduction)
     def forward(self, x):
         residual = x
 
@@ -231,7 +230,8 @@ class XBottleneck(nn.Module):
 
         out = self.conv3(out)
         out = self.bn3(out)
-        out = self.se(out)
+        if self.SE:
+            out = self.SELayer(out)
         
         if self.downsample is not None:
             residual = self.downsample(x)
@@ -244,14 +244,14 @@ class XBottleneck(nn.Module):
 
 class SENet(nn.Module):
     def __init__(self, block, layers, num_classes=NLABEL):
-        super(ResNet, self).__init__()
+        super(SENet, self).__init__()
         self.inplanes = 64
         self.bloc1 = nn.Sequential(
                 conv3x3(4, self.inplanes, stride=2),
                 nn.BatchNorm2d(self.inplanes),
                 nn.ReLU(inplace=True),
                 conv3x3(self.inplanes, self.inplanes, stride=1),
-                nn.BatchNorm2d(self.inc),
+                nn.BatchNorm2d(self.inplanes),
                 nn.ReLU(inplace=True),
                 conv3x3(self.inplanes, 2*self.inplanes, stride=2),
                 nn.BatchNorm2d(2*self.inplanes),
@@ -284,7 +284,7 @@ class SENet(nn.Module):
                 nn.BatchNorm2d(planes * block.expansion),
             )
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers.append(block(self.inplanes, planes, stride, downsample=downsample))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes))
