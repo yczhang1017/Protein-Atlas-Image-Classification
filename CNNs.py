@@ -291,9 +291,7 @@ class SENet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
+        x = self.bloc1(x)
         x = self.maxpool(x)
 
         x = self.layer1(x)
