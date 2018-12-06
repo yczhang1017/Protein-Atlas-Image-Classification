@@ -31,7 +31,7 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
                     help='initial learning rate')
 parser.add_argument('--epochs', default=50, type=int,
                     help='number of epochs to train')
@@ -45,7 +45,7 @@ parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--model', default='senet',  choices=['res34','res50','inception','senet',], 
+parser.add_argument('--model', default='vgg16',  choices=['res34','res50','inception','senet','vgg16'], 
                     type=str, help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
@@ -299,7 +299,7 @@ def main():
             pre_trained[con1_name]=torch.cat((con1_weight,
                        con1_weight[:,dim,:,:].unsqueeze_(1)),1)
             
-            if not args.model=='vgg':
+            if not args.model=='vgg16':
                 pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
                 pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
                 if args.model=='inception':

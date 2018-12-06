@@ -364,7 +364,7 @@ def CNN_models(model_type):
         model = Inception3()
         model_url=inception_url['inception_v3_google']
         con1_name='Conv2d_1a_3x3.conv.weight'
-    elif model_type=='vgg16bn':
+    elif model_type=='vgg16':
         model =VGG(make_layers([64, 64, 'M', 128, 128, 'M',
                 256, 256, 256, 'M', 512, 512, 'M', 
                 512, 512,'M',512, 512, 'M'], batch_norm=False))
