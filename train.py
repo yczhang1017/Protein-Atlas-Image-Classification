@@ -13,12 +13,9 @@ from torchvision.transforms import transforms
 import torch.backends.cudnn as cudnn
 import time
 import argparse
-
 import torch.utils.model_zoo as model_zoo
-from torchvision.models.resnet import model_urls as resnet_uls
-from torchvision.models.resnet import BasicBlock,Bottleneck
-from torchvision.models.inception import model_urls as inception_url
-from CNNs import ResNet,SENet,Inception3,XBottleneck
+
+from CNNs import CNN_models
 
 
 def str2bool(v):
@@ -227,23 +224,6 @@ class F1Loss(nn.Module):
         f1[f1!=f1]=0 #set NaN to 0
         return 1 - torch.mean(f1)    
 
-def CNN_models(model_type):
-    model_url=None; con1_name=None
-    if model_type=='res34':
-        model = ResNet(BasicBlock, [3, 4, 6, 3])
-        model_url=resnet_uls['resnet34']
-        con1_name='conv1.weight'
-    elif model_type=='res50':
-        model = ResNet(Bottleneck, [3, 4, 6, 3])
-        model_url=resnet_uls['resnet50']
-        con1_name='conv1.weight'
-    elif model_type=='senet':
-        model = SENet(XBottleneck, [3, 4, 6, 3])
-    elif model_type=='inception':
-        model = Inception3()
-        model_url=inception_url['inception_v3_google']
-        con1_name='Conv2d_1a_3x3.conv.weight'
-    return (model,model_url,con1_name)
  
 def main():
     csv_file=os.path.join(args.root,'train.csv')
@@ -318,12 +298,18 @@ def main():
             dim=np.random.choice(3,1)[0]
             pre_trained[con1_name]=torch.cat((con1_weight,
                        con1_weight[:,dim,:,:].unsqueeze_(1)),1)
-            pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
-            pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
-            if args.model=='inception':
-                for key in list(pre_trained.keys()):
-                    if key.startswith('Aux'):
-                        del pre_trained[key]
+            
+            if not args.model=='vgg':
+                pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
+                pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
+                if args.model=='inception':
+                    for key in list(pre_trained.keys()):
+                        if key.startswith('Aux'):
+                            del pre_trained[key]
+            else:
+                pre_trained['classifier.0.weight']=pre_trained['classifier.0.weight'][:NLABEL,:512*4*4]
+                pre_trained['classifier.0.bias']=pre_trained['classifier.0.bias'][:NLABEL]   
+                
             model.load_state_dict(pre_trained)
             print('Using pretrained weights')
     

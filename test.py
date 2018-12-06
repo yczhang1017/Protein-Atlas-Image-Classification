@@ -1,4 +1,5 @@
-from train import ProteinDataset,NAME,NLABEL,transform,CNN_models
+from train import ProteinDataset,NAME,NLABEL,transform
+from CNNs import CNN_models
 import os
 import numpy as np
 import pandas as pd
