@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
     description='Protain Alta Image Classification')
 parser.add_argument('--root', default='./',
                     type=str, help='directory of the data')
-parser.add_argument('--batch_size', default=32, type=int,
+parser.add_argument('--batch_size', default=24, type=int,
                     help='Batch size for training')
 parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
@@ -242,7 +242,7 @@ def main():
         rep=int(np.power(len(label_dict)/len(ids[i]),0.3))
         #rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
         repeat.append(rep)
-        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.6)/rep)
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.7)/rep)
     pos_weight=torch.tensor(pos_weight)    
     repeat=np.array(repeat)
         
