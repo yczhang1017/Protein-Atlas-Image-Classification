@@ -305,6 +305,7 @@ def main():
                     for key in list(pre_trained.keys()):
                         if key.startswith('Aux'):
                             del pre_trained[key]
+                model.load_state_dict(pre_trained)
             else:
                 pre_trained['classifier.0.weight']=pre_trained['classifier.0.weight'][:,:512*4*4]
                 pre_trained['classifier.6.weight']=pre_trained['classifier.6.weight'][:NLABEL,:]
@@ -322,7 +323,7 @@ def main():
                         k=k.replace("17","18")
                         k=k.replace("14","15")
                     pre_trained2[k]=v
-            model.load_state_dict(pre_trained2)
+                    model.load_state_dict(pre_trained2)
             print('Using pretrained weights')
      
     
