@@ -219,7 +219,7 @@ class F1Loss(nn.Module):
         fn = torch.sum(y_true,0)
         epsilon=1e-8
         f1_res = 2*fp/(tp+ epsilon) + 2*fn/(tp+ epsilon)
-        return f1_res    
+        return torch.mean(f1_res)  
 
  
 def main():
