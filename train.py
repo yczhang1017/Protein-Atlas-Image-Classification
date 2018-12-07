@@ -307,23 +307,21 @@ def main():
                         if key.startswith('Aux'):
                             del pre_trained[key]
             else:
-                pre_trained['classifier.0.weight']=pre_trained['classifier.0.weight'][:NLABEL,:512*4*4]
-                pre_trained['classifier.0.bias']=pre_trained['classifier.0.bias'][:NLABEL]   
-                
-            model.load_state_dict(pre_trained)
+                pre_trained['classifier.0.weight']=pre_trained['classifier.0.weight'][:,:512*4*4]
+                pre_trained['classifier.6.weight']=pre_trained['classifier.6.weight'][:NLABEL,:]
+                pre_trained['classifier.6.bias']=pre_trained['classifier.6.bias'][:NLABEL]   
+                import collections
+                pre_trained2=collections.OrderedDict()
+                for _ in range(len(pre_trained)):
+                    k,v=pre_trained.popitem(last=False)
+                    if k.startswith("features."):
+                        k=k.replace("28","29")
+                        k=k.replace("26","27")
+                        k=k.replace("21","22")
+                        pre_trained2[k]=v
+            model.load_state_dict(pre_trained2)
             print('Using pretrained weights')
-    
-    
-    '''
-    pre_trained2=collections.OrderedDict()
-    for _ in range(len(pre_trained)):
-        k,v=pre_trained.popitem(last=False)
-        if k.startswith("features."):
-            k=k.replace("features.","")
-            k=k.replace("12","13")
-            k=k.replace("11","12")
-            pre_trained2[k]=v
-    '''     
+     
     
     
     if torch.cuda.is_available():
