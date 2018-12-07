@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
     description='Protain Alta Image Classification')
 parser.add_argument('--root', default='./',
                     type=str, help='directory of the data')
-parser.add_argument('--batch_size', default=12, type=int,
+parser.add_argument('--batch_size', default=32, type=int,
                     help='Batch size for training')
 parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
@@ -45,7 +45,7 @@ parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--model', default='vgg16',  choices=['res34','res50','inception','senet','vgg16'], 
+parser.add_argument('--model', default='res50',  choices=['res34','res50','inception','senet','vgg16'], 
                     type=str, help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
@@ -104,7 +104,7 @@ transform['train']=transforms.Compose(
     [
      transforms.RandomAffine(20,shear=20,resample=PIL.Image.BILINEAR),
      #transforms.RandomRotation(20),
-     transforms.RandomResizedCrop(512,scale=(0.5,1)),
+     transforms.RandomResizedCrop(512,scale=(0.2,1)),
      transforms.RandomHorizontalFlip(),
      transforms.RandomVerticalFlip(),
      transforms.ToTensor(),
