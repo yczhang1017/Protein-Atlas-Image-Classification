@@ -117,7 +117,7 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        x = self.maxpool(x) #added maxpool
+        #x = self.maxpool(x) #added maxpool
         x = self.layer2(x)
         x = self.layer3(x)
         #x = self.dropout2d(x) #added dropout
@@ -125,7 +125,7 @@ class ResNet(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        #x = self.dropout(x) #added dropout
+        x = self.dropout(x) #added dropout
         x = self.fc(x)
 
         return x

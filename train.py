@@ -45,7 +45,7 @@ parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--model', default='res50',  choices=['res34','res50','inception','senet','vgg16'], 
+parser.add_argument('--model', default='res34',  choices=['res34','res50','inception','senet','vgg16'], 
                     type=str, help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
@@ -104,14 +104,16 @@ transform['train']=transforms.Compose(
     [
      transforms.RandomAffine(20,shear=20,resample=PIL.Image.BILINEAR),
      #transforms.RandomRotation(20),
-     transforms.RandomResizedCrop(512,scale=(0.2,1)),
+     transforms.RandomResizedCrop(512),
      transforms.RandomHorizontalFlip(),
      transforms.RandomVerticalFlip(),
      transforms.ToTensor(),
      transforms.Normalize(mean,std)
      ])
 transform['val']=transforms.Compose(
-    [transforms.ToTensor(),
+    [transforms.Resize(570),
+     transforms.CenterCrop(512),
+     transforms.ToTensor(),
      transforms.Normalize(mean,std)
      ])
 
@@ -239,11 +241,11 @@ def main():
     #repeat training images with rare labels
     repeat=[];pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(label_dict)/len(ids[i]),0.3))
-        #rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
-        repeat.append(rep)        
-        #pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.3)/rep+1)
-    #pos_weight=torch.tensor(pos_weight)    
+        rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
+        #rep=int(np.power(len(ids[0])/len(ids[i]),0.2))
+        repeat.append(rep)
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.4)/rep+1.6)
+    pos_weight=torch.tensor(pos_weight)    
     repeat=np.array(repeat)
         
     
@@ -348,7 +350,7 @@ def main():
     print('repeat:',repeat)
     print('positives:',pos)
     if args.loss.endswith('w'):
-        pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.2)+1.6).float().cuda()
+        #pos_weight=torch.tensor(np.power((num_train-pos)/pos,0.4)+1.6).float().cuda()
         print('loss weights: ',pos_weight)
     else:
         pos_weight=None
