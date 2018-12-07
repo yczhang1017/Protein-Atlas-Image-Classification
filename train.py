@@ -298,7 +298,7 @@ def main():
             dim=np.random.choice(3,1)[0]
             pre_trained[con1_name]=torch.cat((con1_weight,
                        con1_weight[:,dim,:,:].unsqueeze_(1)),1)
-            
+            print(con1_name,pre_trained[con1_name].shape)
             if not args.model=='vgg16':
                 pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
                 pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
