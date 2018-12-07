@@ -218,8 +218,11 @@ class F1Loss(nn.Module):
         fp = torch.sum(y_pred,0)
         fn = torch.sum(y_true,0)
         epsilon=1e-8
-        f1_res = 2*fp/(tp+ epsilon) + 2*fn/(tp+ epsilon)
-        return torch.mean(f1_res)  
+        p=tp/(fp+epsilon)
+        r=tp/(fn+epsilon)
+        #f1_res = 2*fp/(tp+ epsilon) + 2*fn/(tp+ epsilon)
+        F1=2*p*r/(epsilon+p+r)
+        return torch.mean(1-F1)  
 
  
 def main():
@@ -238,8 +241,8 @@ def main():
     for i in range(NLABEL):
         rep=int(np.power(len(label_dict)/len(ids[i]),0.3))
         #rep=int(np.power(len(ids[0])/len(ids[i]),0.3))
-        repeat.append(rep)
-        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.7)/rep)
+        repeat.append(rep)        
+        pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.3)/rep+1)
     pos_weight=torch.tensor(pos_weight)    
     repeat=np.array(repeat)
         
