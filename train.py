@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
     description='Protain Alta Image Classification')
 parser.add_argument('--root', default='./',
                     type=str, help='directory of the data')
-parser.add_argument('--batch_size', default=24, type=int,
+parser.add_argument('--batch_size', default=12, type=int,
                     help='Batch size for training')
 parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
@@ -314,9 +314,13 @@ def main():
                 for _ in range(len(pre_trained)):
                     k,v=pre_trained.popitem(last=False)
                     if k.startswith("features."):
-                        k=k.replace("28","29")
-                        k=k.replace("26","27")
-                        k=k.replace("21","22")
+                        k=k.replace("28","30")
+                        k=k.replace("26","28")
+                        k=k.replace("24","25")
+                        k=k.replace("21","23")
+                        k=k.replace("19","20")
+                        k=k.replace("17","18")
+                        k=k.replace("14","15")
                     pre_trained2[k]=v
             model.load_state_dict(pre_trained2)
             print('Using pretrained weights')
