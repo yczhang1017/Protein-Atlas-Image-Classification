@@ -318,7 +318,7 @@ def main():
                         k=k.replace("28","29")
                         k=k.replace("26","27")
                         k=k.replace("21","22")
-                        pre_trained2[k]=v
+                    pre_trained2[k]=v
             model.load_state_dict(pre_trained2)
             print('Using pretrained weights')
      
