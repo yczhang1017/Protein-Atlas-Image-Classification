@@ -363,7 +363,11 @@ from torchvision.models.inception import model_urls as inception_url
 
 def CNN_models(model_type):
     model_url=None; con1_name=None
-    if model_type=='res34':
+    if model_type=='res18':
+        model = ResNet(BasicBlock, [2, 2, 2, 2])
+        model_url=resnet_uls['resnet34']
+        con1_name='conv1.weight'
+    elif model_type=='res34':
         model = ResNet(BasicBlock, [3, 4, 6, 3])
         model_url=resnet_uls['resnet34']
         con1_name='conv1.weight'

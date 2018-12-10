@@ -45,7 +45,8 @@ parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--model', default='res34',  choices=['res34','res50','inception','senet','vgg16'], 
+parser.add_argument('--model', default='res18', 
+                    choices=['res34','res18','res50','inception','senet','vgg16'], 
                     type=str, help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
                     help='type of loss')
@@ -100,8 +101,7 @@ else:
 transform=dict() 
 mean=[0.054813755064775954, 0.0808928726780973, 0.08367144133595689, 0.05226083561943362]
 std=[0.15201123862047256, 0.14087982537762958, 0.139965362113942, 0.10123220339551285]
-transform['train']=transforms.Compose(
-    [
+transform['train']=transforms.Compose([
      transforms.RandomAffine(20,shear=20,resample=PIL.Image.BILINEAR),
      #transforms.RandomRotation(20),
      transforms.RandomResizedCrop(512),
@@ -110,8 +110,8 @@ transform['train']=transforms.Compose(
      transforms.ToTensor(),
      transforms.Normalize(mean,std)
      ])
-transform['val']=transforms.Compose(
-    [transforms.Resize(570),
+transform['val']=transforms.Compose([
+     #transforms.Resize(570),
      transforms.CenterCrop(512),
      transforms.ToTensor(),
      transforms.Normalize(mean,std)
