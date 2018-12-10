@@ -39,13 +39,13 @@ parser.add_argument('--save_folder', default='save/', type=str,
                     help='Dir to save results')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay')
-parser.add_argument('--step_size', default=5, type=int,
+parser.add_argument('--step_size', default=8, type=int,
                     help='Number of steps for every learning rate decay')
 parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--model', default='res18', 
+parser.add_argument('--model', default='vgg11', 
                     choices=['res34','res18','res50','inception','senet','vgg16'], 
                     type=str, help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
@@ -300,7 +300,7 @@ def main():
             dim=np.random.choice(3,1)[0]
             pre_trained[con1_name]=torch.cat((con1_weight,
                        con1_weight[:,dim,:,:].unsqueeze_(1)),1)
-            if not args.model=='vgg16':
+            if not args.model.startswith('vgg'):
                 pre_trained['fc.weight']=pre_trained['fc.weight'][:NLABEL,:]
                 pre_trained['fc.bias']=pre_trained['fc.bias'][:NLABEL]   
                 if args.model=='inception':
@@ -314,18 +314,29 @@ def main():
                 pre_trained['classifier.6.bias']=pre_trained['classifier.6.bias'][:NLABEL]   
                 import collections
                 pre_trained2=collections.OrderedDict()
-                for _ in range(len(pre_trained)):
-                    k,v=pre_trained.popitem(last=False)
-                    if k.startswith("features."):
-                        k=k.replace("28","30")
-                        k=k.replace("26","28")
-                        k=k.replace("24","25")
-                        k=k.replace("21","23")
-                        k=k.replace("19","20")
-                        k=k.replace("17","18")
-                        k=k.replace("14","15")
-                    pre_trained2[k]=v
-                    model.load_state_dict(pre_trained2)
+                if args.model.endswith('16'):
+                    for _ in range(len(pre_trained)):
+                        k,v=pre_trained.popitem(last=False)
+                        if k.startswith("features."):
+                            k=k.replace("28","30")
+                            k=k.replace("26","28")
+                            k=k.replace("24","25")
+                            k=k.replace("21","23")
+                            k=k.replace("19","20")
+                            k=k.replace("17","18")
+                            k=k.replace("14","15")
+                        pre_trained2[k]=v
+                        model.load_state_dict(pre_trained2)
+                elif args.model.endswith('11'):
+                    for _ in range(len(pre_trained)):
+                        k,v=pre_trained.popitem(last=False)
+                        klass=k.split('.')[0]
+                        layer=int(k.split('.')[1])
+                        name=k.split('.')[2]
+                        if klass=='features' and layer>7:
+                            k='.'.join('features.',str(layer+1),name)
+                        pre_trained2[k]=v
+                        model.load_state_dict(pre_trained2)
             print('Using pretrained weights')
      
     
