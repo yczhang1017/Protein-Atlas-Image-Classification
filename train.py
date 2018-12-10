@@ -326,7 +326,7 @@ def main():
                             k=k.replace("17","18")
                             k=k.replace("14","15")
                         pre_trained2[k]=v
-                        model.load_state_dict(pre_trained2)
+                    model.load_state_dict(pre_trained2)
                 elif args.model.endswith('11'):
                     for _ in range(len(pre_trained)):
                         k,v=pre_trained.popitem(last=False)
@@ -334,9 +334,10 @@ def main():
                         layer=int(k.split('.')[1])
                         name=k.split('.')[2]
                         if klass=='features' and layer>7:
-                            k='.'.join('features.',str(layer+1),name)
+                            k='.'.join(['features',str(layer+1),name])
                         pre_trained2[k]=v
-                        model.load_state_dict(pre_trained2)
+                        print(k)
+                    model.load_state_dict(pre_trained2)
             print('Using pretrained weights')
      
     
