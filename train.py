@@ -332,11 +332,11 @@ def main():
                         k,v=pre_trained.popitem(last=False)
                         klass=k.split('.')[0]
                         layer=int(k.split('.')[1])
+                        layer=layer+(layer>7)+(layer>12)
                         name=k.split('.')[2]
-                        if klass=='features' and layer>7:
-                            k='.'.join(['features',str(layer+1),name])
+                        if klass=='features':
+                            k='.'.join(['features',str(layer),name])
                         pre_trained2[k]=v
-                        print(k)
                     model.load_state_dict(pre_trained2)
             print('Using pretrained weights')
      
