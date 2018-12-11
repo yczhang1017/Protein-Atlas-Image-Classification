@@ -234,7 +234,7 @@ class F1Loss(nn.Module):
             prev=torch.zeros_like(tp)
             rrev=torch.zeros_like(tp)
             F1=torch.zeros_like(tp)
-            prev[tp>epsilon]=p[tp>epsilon]/tp[tp>epsilon]
+            prev[tp>epsilon]=fp[tp>epsilon]/tp[tp>epsilon]
             rrev[tp>epsilon]=fn[tp>epsilon]/tp[tp>epsilon]
             F1[tp>epsilon]=2/(prev[tp>epsilon]+rrev[tp>epsilon])
             mF1=torch.mean(F1)
