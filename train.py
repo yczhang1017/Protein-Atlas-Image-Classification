@@ -223,8 +223,8 @@ class F1Loss(nn.Module):
         rrev=torch.zeros_like(tp)
         #F1=torch.zeros_like(tp)
         epsilon=1e-8
-        prev[tp>epsilon]=fp/tp
-        rrev[tp>epsilon]=fn/tp
+        prev[tp>epsilon]=fp[tp>epsilon]/tp[tp>epsilon]
+        rrev[tp>epsilon]=fn[tp>epsilon]/tp[tp>epsilon]
         #p=tp/(fp+epsilon)
         #r=tp/(fn+epsilon)
         #f1_res = 2*fp/(tp+ epsilon) + 2*fn/(tp+ epsilon)
