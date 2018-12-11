@@ -215,21 +215,21 @@ class F1Loss(nn.Module):
         super(F1Loss, self).__init__()
     def forward(self,output,y_true):
         y_pred=output.sigmoid()
-        y_pred=torch.tanh(10*(y_pred-0.5))/2+0.5
+        #y_pred=torch.tanh(10*(y_pred-0.5))/2+0.5
         tp = torch.sum(y_true*y_pred,1)
         fp = torch.sum(y_pred,1)
         fn = torch.sum(y_true,1)
-        p=torch.zeros_like(tp)
-        r=torch.zeros_like(tp)
-        F1=torch.zeros_like(tp)
+        prev=torch.zeros_like(tp)
+        rrev=torch.zeros_like(tp)
+        #F1=torch.zeros_like(tp)
         epsilon=1e-8
-        p[fp>epsilon]=tp/(fp+epsilon)
-        r[fn>epsilon]=tp/(fn+epsilon)
+        prev[tp>epsilon]=fp/tp
+        rrev[tp>epsilon]=fn/tp
         #p=tp/(fp+epsilon)
         #r=tp/(fn+epsilon)
         #f1_res = 2*fp/(tp+ epsilon) + 2*fn/(tp+ epsilon)
-        F1[tp>epsilon]=2*p*r/(epsilon+p+r)
-        return torch.mean(1-F1)  
+        #F1[tp>epsilon]=2*p*r/(epsilon+p+r)
+        return torch.mean(prev+rrev)/2  
 
  
 def main():
