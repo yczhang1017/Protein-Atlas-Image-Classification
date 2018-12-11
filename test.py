@@ -19,9 +19,9 @@ parser.add_argument('--workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--results', default='results/', type=str,
                     help='Dir to save results')
-parser.add_argument('--checkpoint', default='res34_1/out_24.pth', type=str,
+parser.add_argument('--checkpoint', default='vgg11_1/out_25.pth', type=str,
                     help='Trained state_dict file path to open')
-parser.add_argument('--model', default='res18', type=str,
+parser.add_argument('--model', default='vgg11', type=str,
                     help='type of the model')
 
 args = parser.parse_args()
