@@ -45,7 +45,7 @@ parser.add_argument('--checkpoint', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--resume_epoch', default=0, type=int,
                     help='epoch number to be resumed at')
-parser.add_argument('--model', default='vgg11', 
+parser.add_argument('--model', default='res18', 
                     choices=['res34','res18','res50','inception','senet','vgg11','vgg16'], 
                     type=str, help='type of the model')
 parser.add_argument('--loss', default='bcew',  choices=['bce', 'bcew','focal','focalw','F1'], type=str,
