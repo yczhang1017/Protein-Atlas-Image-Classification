@@ -221,15 +221,15 @@ class F1Loss(nn.Module):
         fn = torch.sum(y_true,1)
         prev=torch.zeros_like(tp)
         rrev=torch.zeros_like(tp)
-        #F1=torch.zeros_like(tp)
+        F1=torch.zeros_like(tp)
         epsilon=1e-8
         prev[tp>epsilon]=fp[tp>epsilon]/tp[tp>epsilon]
         rrev[tp>epsilon]=fn[tp>epsilon]/tp[tp>epsilon]
         #p=tp/(fp+epsilon)
         #r=tp/(fn+epsilon)
         #f1_res = 2*fp/(tp+ epsilon) + 2*fn/(tp+ epsilon)
-        #F1[tp>epsilon]=2*p*r/(epsilon+p+r)
-        return torch.mean(prev+rrev)/2  
+        F1[tp>epsilon]=2/(prev[tp>epsilon]+rrev[tp>epsilon])
+        return 1-torch.mean(F1)
 
  
 def main():
@@ -246,7 +246,7 @@ def main():
     #repeat training images with rare labels
     repeat=[];pos_weight=[];
     for i in range(NLABEL):
-        rep=int(np.power(len(label_dict)/len(ids[i]),0.3))
+        rep=int(np.power(len(label_dict)/len(ids[i]),0.2))
         #rep=int(np.power(len(ids[0])/len(ids[i]),0.2))
         repeat.append(rep)
         pos_weight.append(np.power((len(label_dict)-len(ids[i]))/len(ids[i]),0.6)/rep+1)
