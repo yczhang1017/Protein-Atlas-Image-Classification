@@ -219,17 +219,20 @@ class F1Loss(nn.Module):
         tp = torch.sum(y_true*y_pred,1)
         fp = torch.sum(y_pred,1)
         fn = torch.sum(y_true,1)
-        prev=torch.zeros_like(tp)
-        rrev=torch.zeros_like(tp)
-        F1=torch.zeros_like(tp)
+        p=torch.zeros_like(tp)
+        r=torch.zeros_like(tp)
+        #F1=torch.zeros_like(tp)
         epsilon=1e-8
-        prev[tp>epsilon]=fp[tp>epsilon]/tp[tp>epsilon]
-        rrev[tp>epsilon]=fn[tp>epsilon]/tp[tp>epsilon]
+        p[tp>epsilon]=tp[tp>epsilon]/fp[tp>epsilon]
+        r[tp>epsilon]=tp[tp>epsilon]/fn[tp>epsilon]
+        mp=torch.mean(p)
+        mr=torch.mean(r)
         #p=tp/(fp+epsilon)
         #r=tp/(fn+epsilon)
         #f1_res = 2*fp/(tp+ epsilon) + 2*fn/(tp+ epsilon)
-        F1[tp>epsilon]=2/(prev[tp>epsilon]+rrev[tp>epsilon])
-        return 1-torch.mean(F1)
+        #F1[tp>epsilon]=2/(prev[tp>epsilon]+rrev[tp>epsilon])
+        mF1=2*mp*mr/(mp+mr)
+        return 1-mF1
 
  
 def main():
